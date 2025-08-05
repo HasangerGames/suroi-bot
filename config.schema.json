@@ -1,0 +1,27 @@
+{
+    "type": "object",
+    "properties": {
+        "token": {
+            "description": "The bot's Discord token.",
+            "type": "string"
+        },
+        "clientId": {
+            "description": "The bot's Discord client ID.",
+            "type": "string"
+        },
+        "guildId": {
+            "description": "The ID of the Discord guild the bot is installed to.",
+            "type": "string"
+        },
+        "moderatorRoleId": {
+            "description": "The ID of the role with moderator privileges.",
+            "type": "string"
+        },
+        "moderationLogChannelId": {
+            "description": "The ID of the channel to send moderation logs to.",
+            "type": "string"
+        }
+    },
+    "required": ["token", "clientId", "guildId", "roles", "moderatorRoleId", "moderationLogChannelId"],
+    "additionalProperties": false
+}
