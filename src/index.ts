@@ -1,4 +1,6 @@
 import { Glob } from "bun";
+import { Player } from "discord-player";
+import { YoutubeiExtractor } from "discord-player-youtubei";
 import { ApplicationCommandType, type ChatInputCommandInteraction, Client, Events, GatewayIntentBits, InteractionType, REST, type RESTPostAPIApplicationCommandsJSONBody, Routes, type SlashCommandOptionsOnlyBuilder } from "discord.js";
 
 const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } = process.env;
@@ -34,10 +36,13 @@ await rest.put(
 );
 
 console.log("Initializing client...");
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
+
+const player = new Player(client);
+await player.extractors.register(YoutubeiExtractor, {});
 
 client.once(Events.ClientReady, async readyClient => {
-	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+    console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
 
 client.on(Events.InteractionCreate, async interaction => {
