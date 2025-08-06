@@ -4,17 +4,7 @@ import { YoutubeiExtractor } from "discord-player-youtubei";
 import { ApplicationCommandType, Client, Events, GatewayIntentBits, InteractionType, REST, Routes } from "discord.js";
 import type { Command } from "./utils/command";
 import { getRandomEmoji } from "./utils/emoji";
-
-const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } = process.env;
-if (!DISCORD_TOKEN) {
-    throw new Error("DISCORD_TOKEN not specified");
-}
-if (!CLIENT_ID) {
-    throw new Error("CLIENT_ID not specified");
-}
-if (!GUILD_ID) {
-    throw new Error("GUILD_ID not specified");
-}
+import { Config } from "./utils/config";
 
 console.log("Registering commands...");
 const commands: Map<string, Command> = new Map();
@@ -24,9 +14,9 @@ for await (const file of glob.scan("src")) {
     commands.set(command.data.name, command);
 }
 
-const rest = new REST().setToken(DISCORD_TOKEN);
+const rest = new REST().setToken(Config.token);
 await rest.put(
-    Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+    Routes.applicationGuildCommands(Config.clientId, Config.guildId),
     { body: Array.from(commands.values()).map(({ data }) => data) }
 );
 
@@ -64,4 +54,4 @@ client.on(Events.MessageCreate, async message => {
     if (reactionSpam) message.react(getRandomEmoji());
 });
 
-client.login(DISCORD_TOKEN);
+client.login(Config.token);

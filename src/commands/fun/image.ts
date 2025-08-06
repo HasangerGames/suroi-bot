@@ -6,6 +6,7 @@ import { Command } from "../../utils/command";
 export default new Command({
     data: new SlashCommandBuilder()
         .setName("image")
+        .setDescription("Fun with out of context images!")
         .addSubcommand(subcommand => subcommand
             .setName("random")
             .setDescription("Sends a random out of context image.")

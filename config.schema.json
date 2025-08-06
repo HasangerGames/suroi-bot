@@ -1,6 +1,10 @@
 {
     "type": "object",
     "properties": {
+        "$schema": {
+            "description": "Reference to this schema.",
+            "const": "config.schema.json"
+        },
         "token": {
             "description": "The bot's Discord token.",
             "type": "string"
@@ -22,6 +26,6 @@
             "type": "string"
         }
     },
-    "required": ["token", "clientId", "guildId", "roles", "moderatorRoleId", "moderationLogChannelId"],
+    "required": ["$schema", "token", "clientId", "guildId", "roles", "moderatorRoleId", "moderationLogChannelId"],
     "additionalProperties": false
 }
