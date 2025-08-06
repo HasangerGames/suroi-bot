@@ -1,7 +1,7 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import type { Command } from "..";
+import { ChatInputCommandInteraction, SlashCommandBuilder, TextChannel } from "discord.js";
+import { Command } from "../../utils/command";
 
-export default {
+export default new Command({
     data: new SlashCommandBuilder()
         .setName("say")
         .setDescription("Makes the bot say something.")
@@ -15,6 +15,9 @@ export default {
             .setDescription("Add an attachment to the message")
         ),
     async execute(interaction: ChatInputCommandInteraction) {
-        interaction.reply({ content: "u smel" });
+        (interaction.channel as TextChannel).send({ content: interaction.options.getString("message", true) });
+
+        await interaction.reply({ content: "Message sent." });
+        interaction.deleteReply();
     }
-} satisfies Command;
+});

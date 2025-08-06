@@ -1,7 +1,7 @@
 import { type ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
-import type { Command } from "..";
+import { Command } from "../../utils/command";
 
-export default {
+export default new Command({
     data: new SlashCommandBuilder()
         .setName("embed")
         .setDescription("Creates an embed.")
@@ -36,4 +36,4 @@ export default {
             .setTimestamp(interaction.options.getBoolean("timestamp") ? new Date() : null);
         interaction.reply({ embeds: [embed] });
     }
-} satisfies Command;
+});

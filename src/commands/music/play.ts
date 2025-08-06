@@ -1,10 +1,10 @@
 import { useMainPlayer } from "discord-player";
 import { type ChatInputCommandInteraction, EmbedBuilder, type GuildMember, MessageFlags, SlashCommandBuilder } from "discord.js";
-import type { Command } from "../..";
+import { Command } from "../../utils/command";
 
 const numberFormat = Intl.NumberFormat("en", { notation: "compact" });
 
-export default {
+export default new Command({
     data: new SlashCommandBuilder()
         .setName("play")
         .setDescription("Starts playing a track. Must be in a voice channel to use.")
@@ -50,4 +50,4 @@ export default {
             console.error(e);
         }
     }
-} satisfies Command;
+});
