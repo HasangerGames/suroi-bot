@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import factsStr from "../../../facts.txt";
 import { Command } from "../../utils/command";
-import { pickRandomInArray } from "../../utils/pickRandomInArray";
+import { pickRandomInArray } from "../../utils/misc";
 
 const facts = factsStr.split("\n").filter(line => !line.startsWith("#"));
 

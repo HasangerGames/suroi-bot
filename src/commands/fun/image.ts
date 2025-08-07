@@ -1,6 +1,6 @@
 import { AttachmentBuilder, ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { readdir } from "node:fs/promises";
-import { pickRandomInArray } from "../../utils/pickRandomInArray";
+import { pickRandomInArray } from "../../utils/misc";
 import { Command } from "../../utils/command";
 
 export default new Command({

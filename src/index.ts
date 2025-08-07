@@ -1,6 +1,4 @@
 import { Glob } from "bun";
-import { Player } from "discord-player";
-import { YoutubeiExtractor } from "discord-player-youtubei";
 import { ApplicationCommandType, Client, Events, GatewayIntentBits, InteractionType, REST, Routes } from "discord.js";
 import type { Command } from "./utils/command";
 import { getRandomEmoji } from "./utils/emoji";
@@ -29,9 +27,6 @@ const client = new Client({
         GatewayIntentBits.MessageContent
     ]
 });
-
-const player = new Player(client);
-await player.extractors.register(YoutubeiExtractor, {});
 
 client.once(Events.ClientReady, async readyClient => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);

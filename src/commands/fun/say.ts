@@ -4,7 +4,7 @@ import { Command } from "../../utils/command";
 export default new Command({
     data: new SlashCommandBuilder()
         .setName("say")
-        .setDescription("Makes the bot say something.")
+        .setDescription("Make the bot say something.")
         .addStringOption(option => option
             .setName("message")
             .setDescription("What to say")
@@ -14,6 +14,7 @@ export default new Command({
             .setName("attachment")
             .setDescription("Add an attachment to the message")
         ),
+    cooldown: 1000,
     async execute(interaction: ChatInputCommandInteraction) {
         (interaction.channel as TextChannel).send({ content: interaction.options.getString("message", true) });
 
