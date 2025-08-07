@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { toggleReactionSpam } from "../..";
 import { Command } from "../../utils/command";
+import { toggleReactionSpam } from "../../events/messageCreate";
 
 export default new Command({
     data: new SlashCommandBuilder()
