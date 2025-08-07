@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, TextChannel } from "discord.js";
+import { ChatInputCommandInteraction, PermissionsBitField, SlashCommandBuilder, TextChannel } from "discord.js";
 import { Command } from "../../utils/command";
 
 export default new Command({
@@ -13,7 +13,8 @@ export default new Command({
         .addAttachmentOption(option => option
             .setName("attachment")
             .setDescription("Add an attachment to the message")
-        ),
+        )
+        .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageMessages),
     cooldown: 1000,
     async execute(interaction: ChatInputCommandInteraction) {
         (interaction.channel as TextChannel).send({ content: interaction.options.getString("message", true) });
