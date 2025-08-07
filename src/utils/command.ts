@@ -19,7 +19,8 @@ export class Command {
     }
 
     async execute(interaction: ChatInputCommandInteraction): Promise<void> {
-        const timeSinceLastRun = Date.now() - this.lastRun;
+        const now = Date.now();
+        const timeSinceLastRun = now - this.lastRun;
         if (timeSinceLastRun < this.cooldown) {
             await interaction.reply({
                 content: `Please wait ${Math.round((this.cooldown - timeSinceLastRun) / 1000)} seconds before using this command again.`,
@@ -27,6 +28,7 @@ export class Command {
             });
             return;
         }
+        this.lastRun = now;
 
         await this._execute(interaction);
     }
