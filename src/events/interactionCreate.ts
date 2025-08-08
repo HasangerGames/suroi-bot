@@ -1,6 +1,6 @@
 import { ApplicationCommandType, Events, InteractionType } from "discord.js";
-import { EventHandler } from "../utils/eventHandler";
 import { commands } from "..";
+import { EventHandler } from "../utils/eventHandler";
 
 export default new EventHandler(Events.InteractionCreate, async interaction => {
     if (interaction.type !== InteractionType.ApplicationCommand) return;

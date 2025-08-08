@@ -7,6 +7,7 @@ export default new Command({
         .setName("reactspam")
         .setDescription("Enable/disable reaction spam.")
         .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageMessages),
+    cooldown: 3000,
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.reply({
             content: `Reaction spam is now ${toggleReactionSpam() ? "enabled" : "disabled"}.`,

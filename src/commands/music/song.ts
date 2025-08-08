@@ -4,7 +4,7 @@ import { createReadStream } from "node:fs";
 import { exists, mkdir } from "node:fs/promises";
 import YouTube, { Video } from "youtube-sr";
 import { Command } from "../../utils/command";
-import { EmbedColors } from "../../utils/misc";
+import { makeSimpleEmbed, EmbedColors, sendSimpleEmbed } from "../../utils/misc";
 
 enum QueueStatus {
     Downloading,
@@ -22,6 +22,7 @@ class SongManagerClass {
     lastChannel?: TextChannel;
 
     queue: Array<Video> = [];
+    get currentSong(): Video | undefined { return this.queue[0]; }
 
     currentDownload?: Bun.Subprocess;
 
@@ -92,11 +93,11 @@ class SongManagerClass {
         this._player.stop();
         this._status = QueueStatus.Idle;
         if (this.queue.length) {
-            this._play(this.queue[0]);
+            this._play(this.currentSong);
         }
     }
 
-    makeNowPlayingEmbed(video: Video, name: string): EmbedBuilder {
+    makeNowPlayingEmbed(video: Video, name: string, color: number): EmbedBuilder {
         return new EmbedBuilder()
             .setAuthor({ iconURL: video.channel?.iconURL(), name })
             .setTitle(`**${video.title ?? "No Title"}**`)
@@ -107,7 +108,7 @@ class SongManagerClass {
                 { name: "Views", value: `\`${numberFormat.format(video.views)}\``, inline: true },
                 { name: "Link", value: video.url }
             )
-            .setColor(EmbedColors.success);
+            .setColor(color);
     }
 
     private async _play(video?: Video, sendNowPlayingMessage = true): Promise<void> {
@@ -142,7 +143,7 @@ class SongManagerClass {
         this._status = QueueStatus.Playing;
         if (sendNowPlayingMessage) {
             this.lastChannel?.send({
-                embeds: [this.makeNowPlayingEmbed(video, "Now Playing")]
+                embeds: [this.makeNowPlayingEmbed(video, "Now Playing", EmbedColors.info)]
             });
         }
 
@@ -214,199 +215,201 @@ export default new Command({
             .setName("stop")
             .setDescription("Clear the queue and leave the voice channel.")
         ),
-    cooldown: 10000,
+    cooldown: 5000,
+    deferred: true,
     async execute(interaction: ChatInputCommandInteraction) {
         const channel = (interaction.member as GuildMember)?.voice.channel;
         if (!channel) return interaction.reply({ content: "You are not connected to a voice channel!", flags: [MessageFlags.Ephemeral] });
 
-        await interaction.deferReply();
-
         SongManager.lastChannel = interaction.channel as TextChannel ?? undefined;
 
-        try {
-            switch (interaction.options.getSubcommand()) {
-                case "search": {
-                    const query = interaction.options.getString("query", true);
-                    const videos = await YouTube.search(query, { type: "video", limit: 5 });
+        switch (interaction.options.getSubcommand()) {
+            case "search": {
+                const query = interaction.options.getString("query", true);
+                const videos = await YouTube.search(query, { type: "video", limit: 5 });
 
-                    const embed = new EmbedBuilder()
-                        .setTitle(`🔍 Search Results for **${query}**`)
-                        .setFields(
-                            videos.flatMap((video: Video, i: number): APIEmbedField[] => [
-                                { name: `${selectionEmojis[i]} ${video.title ?? "No Title"}`, value: video.channel?.name ?? "No Channel" },
-                                { name: "Duration", value: `\`${video.durationFormatted}\``, inline: true },
-                                { name: "Views", value: `\`${numberFormat.format(video.views)}\``, inline: true }
-                            ])
-                        )
-                        .setThumbnail(videos[0]?.thumbnail?.displayThumbnailURL() ?? null)
-                        .setFooter({ text: "Click a button below to add a song to the queue." })
-                        .setColor(EmbedColors.info);
+                const embed = new EmbedBuilder()
+                    .setTitle(`🔍 Search Results for **${query}**`)
+                    .setFields(
+                        videos.flatMap((video: Video, i: number): APIEmbedField[] => [
+                            { name: `${selectionEmojis[i]} ${video.title ?? "No Title"}`, value: video.channel?.name ?? "No Channel" },
+                            { name: "Duration", value: `\`${video.durationFormatted}\``, inline: true },
+                            { name: "Views", value: `\`${numberFormat.format(video.views)}\``, inline: true }
+                        ])
+                    )
+                    .setThumbnail(videos[0]?.thumbnail?.displayThumbnailURL() ?? null)
+                    .setFooter({ text: "Click a button below to add a song to the queue." })
+                    .setColor(EmbedColors.info);
 
-                    const buttons = Array.from({ length: videos.length }, (_, i) =>
-                        new ButtonBuilder()
-                            .setCustomId(i.toString())
-                            .setLabel((i + 1).toString())
-                            .setStyle(ButtonStyle.Primary)
-                    );
-                    const row = new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(buttons);
+                const buttons = Array.from({ length: videos.length }, (_, i) =>
+                    new ButtonBuilder()
+                        .setCustomId(i.toString())
+                        .setLabel((i + 1).toString())
+                        .setStyle(ButtonStyle.Primary)
+                );
+                const row = new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(buttons);
 
-                    const message = await interaction.followUp({
-                        embeds: [embed],
-                        components: [row]
-                    });
-                    const collector = message.createMessageComponentCollector({ componentType: ComponentType.Button, time: 30000 });
-                    let madeSelection = false;
+                const message = await interaction.followUp({
+                    embeds: [embed],
+                    components: [row]
+                });
+                const collector = message.createMessageComponentCollector({ componentType: ComponentType.Button, time: 30000 });
+                let madeSelection = false;
 
-                    const disableButtons = () => {
-                        row.components.forEach(btn => btn.setDisabled(true));
-                        interaction.editReply({ components: [row] });
-                    };
+                const disableButtons = () => {
+                    row.components.forEach(btn => btn.setDisabled(true));
+                    interaction.editReply({ components: [row] });
+                };
 
-                    collector.on("collect", i => {
-                        if (madeSelection) return;
-                        madeSelection = true;
+                collector.on("collect", i => {
+                    if (madeSelection) return;
+                    madeSelection = true;
 
-                        const selection = videos[parseInt(i.customId)];
-                        if (!selection) {
-                            const embed = new EmbedBuilder()
-                                .setTitle(`❌ Unable to make selection`)
-                                .setColor(EmbedColors.danger);
-                            i.reply({ embeds: [embed] });
-                            return;
-                        }
-
-                        disableButtons();
-
-                        SongManager.connect(channel);
-                        SongManager.addToQueue(selection);
-
-                        const embed = SongManager.makeNowPlayingEmbed(selection, "Added to Queue");
-                        i.reply({ embeds: [embed] });
-                    });
-
-                    collector.on("end", disableButtons);
-                    break;
-                }
-                case "play": {
-                    const query = interaction.options.getString("query", true);
-                    const video = (await YouTube.search(query, { type: "video", limit: 1 }))[0];
-                    if (!video) {
+                    const selection = videos[parseInt(i.customId)];
+                    if (!selection) {
                         const embed = new EmbedBuilder()
-                            .setTitle(`❌ No results for **${query}**`)
+                            .setTitle(`❌ Unable to make selection`)
                             .setColor(EmbedColors.danger);
-                        await interaction.followUp({ embeds: [embed] });
+                        i.reply({ embeds: [embed] });
                         return;
                     }
+
+                    disableButtons();
 
                     SongManager.connect(channel);
-                    SongManager.addToQueue(video);
+                    SongManager.addToQueue(selection);
 
-                    const embed = SongManager.makeNowPlayingEmbed(video, "Added to Queue");
-                    await interaction.followUp({ embeds: [embed] });
-                    break;
-                }
-                case "queue": {
-                    let statusText: string;
-                    switch (SongManager.status) {
-                        case QueueStatus.Downloading:
-                            statusText = "Downloading...";
-                            break;
-                        case QueueStatus.Playing:
-                            statusText = "Now Playing";
-                            break;
-                        case QueueStatus.Idle:
-                            statusText = "Paused";
-                            break;
-                    }
+                    const embed = SongManager.makeNowPlayingEmbed(selection, "Added to Queue", EmbedColors.success);
+                    i.reply({ embeds: [embed] });
+                });
 
-                    const queue = SongManager.queue;
-
-                    const embed = new EmbedBuilder()
-                        .setTitle("🎶 Queue")
-                        .setDescription(!queue.length ? "Queue is currently empty." : null)
-                        .addFields(
-                            queue.map((video: Video, i: number): APIEmbedField => ({
-                                name: `${i + 1}. **${video.title ?? "No Title"}**`,
-                                value: `${video.channel?.name ?? "No Channel"} - \`${video.durationFormatted}\`${i === 0 ? ` ◀️ ${statusText}` : ""}`
-                            }))
-                        )
-                        .setThumbnail(SongManager.queue[0]?.thumbnail?.displayThumbnailURL() ?? null)
-                        .setColor(EmbedColors.info);
-
-                    await interaction.followUp({ embeds: [embed] });
-                    break;
-                }
-                case "nowplaying": {
-                    const currentSong = SongManager.queue[0];
-                    const embed = currentSong
-                        ? SongManager.makeNowPlayingEmbed(currentSong, "Now Playing")
-                        : new EmbedBuilder()
-                            .setTitle("Not playing anything")
-                            .setDescription("Use the /song play command to queue up a song!")
-                            .setColor(EmbedColors.info);
-                    await interaction.followUp({ embeds: [embed] });
-                    break;
-                }
-                case "pause": {
-                    SongManager.pause();
-                    const embed = new EmbedBuilder()
-                        .setTitle("⏸️ Paused current song")
-                        .setColor(EmbedColors.success);
-                    await interaction.followUp({ embeds: [embed] });
-                    break;
-                }
-                case "unpause": {
-                    SongManager.unpause();
-                    const embed = new EmbedBuilder()
-                        .setTitle("▶️ Unpaused current song")
-                        .setColor(EmbedColors.success);
-                    await interaction.followUp({ embeds: [embed] });
-                    break;
-                }
-                case "skip": {
-                    SongManager.skip();
-                    const embed = new EmbedBuilder()
-                        .setTitle("⏩ Skipped current song")
-                        .setColor(EmbedColors.success);
-                    await interaction.followUp({ embeds: [embed] });
-                    break;
-                }
-                case "remove": {
-                    const index = interaction.options.getInteger("index", true) - 1;
-                    if (!SongManager.queue[index]) {
-                        const embed = new EmbedBuilder()
-                            .setTitle("❌ That index doesn't exist in the queue")
-                            .setColor(EmbedColors.danger);
-                        await interaction.followUp({ embeds: [embed] });
-                        return;
-                    }
-
-                    SongManager.removeFromQueue(index);
-
-                    const embed = new EmbedBuilder()
-                        .setTitle("✂️ Removed song from queue")
-                        .setColor(EmbedColors.success);
-                    await interaction.followUp({ embeds: [embed] });
-                    break;
-                }
-                case "stop": {
-                    SongManager.disconnect();
-                    const embed = new EmbedBuilder()
-                        .setTitle("👋 So long!")
-                        .setDescription("Cleared queue and left voice channel.")
-                        .setColor(EmbedColors.success);
-                    await interaction.followUp({ embeds: [embed] });
-                    break;
-                }
+                collector.on("end", disableButtons);
+                break;
             }
-        } catch (e) {
-            console.error(e);
-            const embed = new EmbedBuilder()
-                .setTitle(`❌ An error occurred.`)
-                .setDescription("Ping <@753029976474779760> for details.")
-                .setColor(EmbedColors.danger);
-            await interaction.followUp({ embeds: [embed] });
-            return;
+            case "play": {
+                const query = interaction.options.getString("query", true);
+                const video = (await YouTube.search(query, { type: "video", limit: 1 }))[0];
+                if (!video) {
+                    const embed = new EmbedBuilder()
+                        .setTitle(`❌ No results for **${query}**`)
+                        .setColor(EmbedColors.danger);
+                    await interaction.followUp({ embeds: [embed] });
+                    return;
+                }
+
+                SongManager.connect(channel);
+                SongManager.addToQueue(video);
+
+                const embed = SongManager.makeNowPlayingEmbed(video, "Added to Queue", EmbedColors.success);
+                await interaction.followUp({ embeds: [embed] });
+                break;
+            }
+            case "queue": {
+                let statusText: string;
+                switch (SongManager.status) {
+                    case QueueStatus.Downloading:
+                        statusText = "Downloading...";
+                        break;
+                    case QueueStatus.Playing:
+                        statusText = "Now Playing";
+                        break;
+                    case QueueStatus.Idle:
+                        statusText = "Paused";
+                        break;
+                }
+
+                const queue = SongManager.queue;
+
+                const embed = new EmbedBuilder()
+                    .setTitle("🎶 Queue")
+                    .setDescription(!queue.length ? "Queue is currently empty." : null)
+                    .addFields(
+                        queue.map((video: Video, i: number): APIEmbedField => ({
+                            name: `${i + 1}. **${video.title ?? "No Title"}**`,
+                            value: `${video.channel?.name ?? "No Channel"} - \`${video.durationFormatted}\`${i === 0 ? ` ◀️ ${statusText}` : ""}`
+                        }))
+                    )
+                    .setThumbnail(SongManager.currentSong?.thumbnail?.displayThumbnailURL() ?? null)
+                    .setColor(EmbedColors.info);
+
+                await interaction.followUp({ embeds: [embed] });
+                break;
+            }
+            case "nowplaying": {
+                const currentSong = SongManager.currentSong;
+                const embed = currentSong
+                    ? SongManager.makeNowPlayingEmbed(currentSong, "Now Playing", EmbedColors.info)
+                    : makeSimpleEmbed(
+                        "Not playing anything",
+                        "Use the /song play command to queue up a song!",
+                        EmbedColors.info
+                    );
+                await interaction.followUp({ embeds: [embed] });
+                break;
+            }
+            // TODO add a method to SongManager to create an embed with the current song and a custom title
+            case "pause": {
+                SongManager.pause();
+                sendSimpleEmbed(
+                    interaction,
+                    "⏸️ Paused current song",
+                    null,
+                    EmbedColors.success
+                );
+                break;
+            }
+            case "unpause": {
+                SongManager.unpause();
+                sendSimpleEmbed(
+                    interaction,
+                    "▶️ Unpaused current song",
+                    null,
+                    EmbedColors.success
+                );
+                break;
+            }
+            case "skip": {
+                SongManager.skip();
+                sendSimpleEmbed(
+                    interaction,
+                    "⏩ Skipped current song",
+                    null,
+                    EmbedColors.success
+                );
+                break;
+            }
+            case "remove": {
+                const index = interaction.options.getInteger("index", true) - 1;
+                if (!SongManager.queue[index]) {
+                    sendSimpleEmbed(
+                        interaction,
+                        "❌ That index doesn't exist in the queue",
+                        null,
+                        EmbedColors.danger
+                    );
+                    return;
+                }
+
+                SongManager.removeFromQueue(index);
+
+                sendSimpleEmbed(
+                    interaction,
+                    "✂️ Removed song from queue",
+                    null,
+                    EmbedColors.success
+                );
+                break;
+            }
+            case "stop": {
+                SongManager.disconnect();
+                sendSimpleEmbed(
+                    interaction,
+                    "👋 So long!",
+                    "Cleared queue and left voice channel.",
+                    EmbedColors.success
+                );
+                break;
+            }
         }
     }
 });

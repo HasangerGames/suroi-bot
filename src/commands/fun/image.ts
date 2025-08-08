@@ -29,6 +29,7 @@ export default new Command({
                 .setRequired(true)
             )
         ),
+    cooldown: 2000,
     async execute(interaction: ChatInputCommandInteraction) {
         const images = await readdir("./data/images");
         let name: string | undefined;

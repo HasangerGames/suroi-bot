@@ -25,6 +25,7 @@ export default new Command({
             .setName("timestamp")
             .setDescription("Whether to add a timestamp to the embed")
         ),
+    cooldown: 2000,
     async execute(interaction: ChatInputCommandInteraction) {
         const author = interaction.options.getUser("author");
         const footer = interaction.options.getString("footer");

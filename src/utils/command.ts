@@ -1,20 +1,24 @@
 import { MessageFlags, SharedSlashCommand, type ChatInputCommandInteraction, type RESTPostAPIApplicationCommandsJSONBody, type SlashCommandOptionsOnlyBuilder } from "discord.js";
+import { makeSimpleEmbed, EmbedColors } from "./misc";
 
 export class Command {
     readonly data: RESTPostAPIApplicationCommandsJSONBody;
     readonly cooldown: number;
+    readonly deferred: boolean;
     private _execute: (interaction: ChatInputCommandInteraction) => void;
     lastRun = 0;
 
     constructor(
-        { data, cooldown, execute }: {
+        { data, cooldown, deferred, execute }: {
             data: SharedSlashCommand,
-            cooldown?: number,
+            cooldown: number,
+            deferred?: boolean,
             execute: (interaction: ChatInputCommandInteraction) => void
         }
     ) {
         this.data = data.toJSON();
-        this.cooldown = cooldown ?? 5000;
+        this.cooldown = cooldown;
+        this.deferred = deferred ?? false;
         this._execute = execute;
     }
 
@@ -30,6 +34,21 @@ export class Command {
         }
         this.lastRun = now;
 
-        await this._execute(interaction);
+        if (this.deferred) {
+            await interaction.deferReply();
+        }
+
+        try {
+            await this._execute(interaction);
+        } catch (e) {
+            console.error(`An error occurred when trying to execute command /${interaction.commandName}. Details:`);
+            console.error(e);
+            const embed = makeSimpleEmbed(
+                "❌ An error occurred when trying to execute this command.",
+                "Ping <@753029976474779760> for details.",
+                EmbedColors.danger
+            );
+            await interaction[this.deferred ? "followUp" : "reply"]({ embeds: [embed] });
+        }
     }
 }
