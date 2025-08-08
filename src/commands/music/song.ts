@@ -101,12 +101,13 @@ class SongManagerClass {
         return new EmbedBuilder()
             .setAuthor({ iconURL: video.channel?.iconURL(), name })
             .setTitle(`**${video.title ?? "No Title"}**`)
-            .setDescription(video.channel?.name ?? "No Channel")
+            .setURL(video.url)
+            .setDescription(`[${video.channel?.name ?? "No Channel"}](${video.channel?.url})`)
             .setThumbnail(video.thumbnail?.displayThumbnailURL() ?? null)
             .setFields(
                 { name: "Duration", value: `\`${video.durationFormatted}\``, inline: true },
                 { name: "Views", value: `\`${numberFormat.format(video.views)}\``, inline: true },
-                { name: "Link", value: video.url }
+                { name: "Uploaded", value: `\`${video.uploadedAt}\``, inline: true }
             )
             .setColor(color);
     }
@@ -219,7 +220,7 @@ export default new Command({
     deferred: true,
     async execute(interaction: ChatInputCommandInteraction) {
         const channel = (interaction.member as GuildMember)?.voice.channel;
-        if (!channel) return interaction.reply({ content: "You are not connected to a voice channel!", flags: [MessageFlags.Ephemeral] });
+        if (!channel) return interaction.followUp({ content: "You are not connected to a voice channel!", flags: [MessageFlags.Ephemeral] });
 
         SongManager.lastChannel = interaction.channel as TextChannel ?? undefined;
 
@@ -232,9 +233,11 @@ export default new Command({
                     .setTitle(`🔍 Search Results for **${query}**`)
                     .setFields(
                         videos.flatMap((video: Video, i: number): APIEmbedField[] => [
-                            { name: `${selectionEmojis[i]} ${video.title ?? "No Title"}`, value: video.channel?.name ?? "No Channel" },
+                            { name: " ", value: `${selectionEmojis[i]} [**${video.title ?? "No Title"}**](${video.url})` },
+                            { name: " ", value: `[${video.channel?.name ?? "No Channel"}](${video.channel?.url})` },
                             { name: "Duration", value: `\`${video.durationFormatted}\``, inline: true },
-                            { name: "Views", value: `\`${numberFormat.format(video.views)}\``, inline: true }
+                            { name: "Views", value: `\`${numberFormat.format(video.views)}\``, inline: true },
+                            { name: "Uploaded", value: `\`${video.uploadedAt}\``, inline: true }
                         ])
                     )
                     .setThumbnail(videos[0]?.thumbnail?.displayThumbnailURL() ?? null)
@@ -253,7 +256,7 @@ export default new Command({
                     embeds: [embed],
                     components: [row]
                 });
-                const collector = message.createMessageComponentCollector({ componentType: ComponentType.Button, time: 30000 });
+                const collector = message.createMessageComponentCollector({ componentType: ComponentType.Button, time: 120000 });
                 let madeSelection = false;
 
                 const disableButtons = () => {
@@ -267,9 +270,11 @@ export default new Command({
 
                     const selection = videos[parseInt(i.customId)];
                     if (!selection) {
-                        const embed = new EmbedBuilder()
-                            .setTitle(`❌ Unable to make selection`)
-                            .setColor(EmbedColors.danger);
+                        const embed = makeSimpleEmbed(
+                            "❌ Unable to make selection",
+                            null,
+                            EmbedColors.danger
+                        );
                         i.reply({ embeds: [embed] });
                         return;
                     }
@@ -286,14 +291,17 @@ export default new Command({
                 collector.on("end", disableButtons);
                 break;
             }
+            // TODO Make this method accept YT URLs
             case "play": {
                 const query = interaction.options.getString("query", true);
                 const video = (await YouTube.search(query, { type: "video", limit: 1 }))[0];
                 if (!video) {
-                    const embed = new EmbedBuilder()
-                        .setTitle(`❌ No results for **${query}**`)
-                        .setColor(EmbedColors.danger);
-                    await interaction.followUp({ embeds: [embed] });
+                    sendSimpleEmbed(
+                        interaction,
+                        `❌ No results for **${query}**`,
+                        null,
+                        EmbedColors.danger
+                    );
                     return;
                 }
 
@@ -348,6 +356,7 @@ export default new Command({
                 break;
             }
             // TODO add a method to SongManager to create an embed with the current song and a custom title
+            // TODO Make pause(), unpause(), and skip() return boolean, indicate
             case "pause": {
                 SongManager.pause();
                 sendSimpleEmbed(
