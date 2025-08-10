@@ -24,7 +24,9 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildModeration
     ]
 });
 
@@ -32,7 +34,14 @@ console.log("Registering events...");
 const eventGlob = new Glob("events/**/*.ts");
 for await (const file of eventGlob.scan("src")) {
     const { event, listener }: EventHandler<never> = (await import(`./${file}`)).default;
-    client.on(event, listener);
+    client.on(event, (...args) => {
+        try {
+            listener(...args);
+        } catch (e) {
+            console.error(`An error occurred when trying to execute event handler '${event}'. Details:`);
+            console.error(e);
+        }
+    });
 }
 
 client.once(Events.ClientReady, async readyClient => {

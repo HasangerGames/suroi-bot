@@ -4,7 +4,7 @@ import { Command } from "../../utils/command";
 export default new Command({
     data: new SlashCommandBuilder()
         .setName("embed")
-        .setDescription("Creates an embed.")
+        .setDescription("Create an embed")
         .addUserOption(option => option
             .setName("author")
             .setDescription("The user to show at the top of the embed")

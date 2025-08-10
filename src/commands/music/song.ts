@@ -4,7 +4,7 @@ import { createReadStream } from "node:fs";
 import { exists, mkdir } from "node:fs/promises";
 import YouTube, { Video } from "youtube-sr";
 import { Command } from "../../utils/command";
-import { makeSimpleEmbed, EmbedColors, sendSimpleEmbed } from "../../utils/misc";
+import { simpleEmbed, EmbedColors, simpleEmbedFollowUp } from "../../utils/misc";
 
 enum QueueStatus {
     Downloading,
@@ -54,6 +54,7 @@ class SongManagerClass {
     }
 
     disconnect(): void {
+        this.currentDownload?.kill();
         this.connection?.destroy();
         this.connection = undefined;
         this.queue = [];
@@ -121,7 +122,7 @@ class SongManagerClass {
             this._status = QueueStatus.Downloading;
             await new Promise((resolve, reject) => {
                 this.currentDownload = Bun.spawn({
-                    cmd: ["yt-dlp", "-x", "--audio-format", "opus", "--audio-quality", "0", "-o", "data/songs/%(id)s", video.url],
+                    cmd: ["yt-dlp", "--cookies", "data/cookies.txt", "-x", "--audio-format", "opus", "--audio-quality", "0", "-o", "data/songs/%(id)s", video.url],
                     stdout: "inherit",
                     stderr: "inherit",
                     onExit: (
@@ -220,7 +221,16 @@ export default new Command({
     deferred: true,
     async execute(interaction: ChatInputCommandInteraction) {
         const channel = (interaction.member as GuildMember)?.voice.channel;
-        if (!channel) return interaction.followUp({ content: "You are not connected to a voice channel!", flags: [MessageFlags.Ephemeral] });
+        if (!channel) {
+            simpleEmbedFollowUp(
+                interaction,
+                "❌ Can't use command",
+                "You must be connected to a voice channel to use this command.",
+                EmbedColors.error,
+                true
+            );
+            return;
+        }
 
         SongManager.lastChannel = interaction.channel as TextChannel ?? undefined;
 
@@ -270,10 +280,10 @@ export default new Command({
 
                     const selection = videos[parseInt(i.customId)];
                     if (!selection) {
-                        const embed = makeSimpleEmbed(
+                        const embed = simpleEmbed(
                             "❌ Unable to make selection",
                             null,
-                            EmbedColors.danger
+                            EmbedColors.error
                         );
                         i.reply({ embeds: [embed] });
                         return;
@@ -292,15 +302,22 @@ export default new Command({
                 break;
             }
             // TODO Make this method accept YT URLs
+            // TODO Allow inserting songs at any position in the queue
+            // TODO upload date can be null, hide uploaded field when this happens
+            // TODO listen for disconnect event, reset everything
+            // TODO show who added what song in footer
+            // TODO show error when song can't be skipped
+            // TODO show current song in pause/unpause/skip embeds
+            // TODO embed for no results
             case "play": {
                 const query = interaction.options.getString("query", true);
                 const video = (await YouTube.search(query, { type: "video", limit: 1 }))[0];
                 if (!video) {
-                    sendSimpleEmbed(
+                    simpleEmbedFollowUp(
                         interaction,
                         `❌ No results for **${query}**`,
                         null,
-                        EmbedColors.danger
+                        EmbedColors.error
                     );
                     return;
                 }
@@ -347,7 +364,7 @@ export default new Command({
                 const currentSong = SongManager.currentSong;
                 const embed = currentSong
                     ? SongManager.makeNowPlayingEmbed(currentSong, "Now Playing", EmbedColors.info)
-                    : makeSimpleEmbed(
+                    : simpleEmbed(
                         "Not playing anything",
                         "Use the /song play command to queue up a song!",
                         EmbedColors.info
@@ -359,7 +376,7 @@ export default new Command({
             // TODO Make pause(), unpause(), and skip() return boolean, indicate
             case "pause": {
                 SongManager.pause();
-                sendSimpleEmbed(
+                simpleEmbedFollowUp(
                     interaction,
                     "⏸️ Paused current song",
                     null,
@@ -369,7 +386,7 @@ export default new Command({
             }
             case "unpause": {
                 SongManager.unpause();
-                sendSimpleEmbed(
+                simpleEmbedFollowUp(
                     interaction,
                     "▶️ Unpaused current song",
                     null,
@@ -379,7 +396,7 @@ export default new Command({
             }
             case "skip": {
                 SongManager.skip();
-                sendSimpleEmbed(
+                simpleEmbedFollowUp(
                     interaction,
                     "⏩ Skipped current song",
                     null,
@@ -390,18 +407,18 @@ export default new Command({
             case "remove": {
                 const index = interaction.options.getInteger("index", true) - 1;
                 if (!SongManager.queue[index]) {
-                    sendSimpleEmbed(
+                    simpleEmbedFollowUp(
                         interaction,
                         "❌ That index doesn't exist in the queue",
                         null,
-                        EmbedColors.danger
+                        EmbedColors.error
                     );
                     return;
                 }
 
                 SongManager.removeFromQueue(index);
 
-                sendSimpleEmbed(
+                simpleEmbedFollowUp(
                     interaction,
                     "✂️ Removed song from queue",
                     null,
@@ -411,7 +428,7 @@ export default new Command({
             }
             case "stop": {
                 SongManager.disconnect();
-                sendSimpleEmbed(
+                simpleEmbedFollowUp(
                     interaction,
                     "👋 So long!",
                     "Cleared queue and left voice channel.",

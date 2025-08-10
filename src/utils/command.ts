@@ -1,5 +1,5 @@
 import { MessageFlags, SharedSlashCommand, type ChatInputCommandInteraction, type RESTPostAPIApplicationCommandsJSONBody, type SlashCommandOptionsOnlyBuilder } from "discord.js";
-import { makeSimpleEmbed, EmbedColors } from "./misc";
+import { simpleEmbed, EmbedColors } from "./misc";
 
 export class Command {
     readonly data: RESTPostAPIApplicationCommandsJSONBody;
@@ -43,10 +43,10 @@ export class Command {
         } catch (e) {
             console.error(`An error occurred when trying to execute command /${interaction.commandName}. Details:`);
             console.error(e);
-            const embed = makeSimpleEmbed(
+            const embed = simpleEmbed(
                 "❌ An error occurred when trying to execute this command.",
                 "Ping <@753029976474779760> for details.",
-                EmbedColors.danger
+                EmbedColors.error
             );
             await interaction[this.deferred ? "followUp" : "reply"]({ embeds: [embed] });
         }
