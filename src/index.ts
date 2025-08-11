@@ -4,6 +4,14 @@ import type { Command } from "./utils/command";
 import { Config } from "./utils/config";
 import type { EventHandler } from "./utils/eventHandler";
 
+const errorHandler = (e: unknown) => {
+    console.error("An unhandled error occurred. Details:");
+    console.error(e);
+    process.exit(1);
+};
+process.on("uncaughtException", errorHandler);
+process.on("unhandledRejection", errorHandler);
+
 console.log("Registering commands...");
 export const commands: Map<string, Command> = new Map();
 const commandGlob = new Glob("commands/**/*.ts");
