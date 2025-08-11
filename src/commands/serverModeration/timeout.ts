@@ -1,23 +1,7 @@
 import { CaseType } from "@prisma/client";
-import { ChatInputCommandInteraction, PermissionsBitField, SlashCommandBuilder, type APIEmbedField } from "discord.js";
+import { type ChatInputCommandInteraction, PermissionsBitField, SlashCommandBuilder } from "discord.js";
 import { Command } from "../../utils/command";
-import { EmbedColors, modActionPreCheck, prisma, sendModActionEmbeds } from "../../utils/misc";
-
-const timeoutDurations = [
-    { name: "1 minute",   value: "60000" },
-    { name: "5 minutes",  value: "300000" },
-    { name: "10 minutes", value: "600000" },
-    { name: "30 minutes", value: "1800000" },
-    { name: "1 hour",     value: "3600000" },
-    { name: "2 hours",    value: "7200000" },
-    { name: "6 hours",    value: "21600000" },
-    { name: "12 hours",   value: "43200000" },
-    { name: "1 day",      value: "86400000" },
-    { name: "2 days",     value: "172800000" },
-    { name: "1 week",     value: "604800000" },
-    { name: "2 weeks",    value: "1209600000" },
-    { name: "1 month",    value: "2419200000" }
-];
+import { type CaseData, modActionPreCheck, prisma, sendModActionEmbeds } from "../../utils/misc";
 
 export default new Command({
     data: new SlashCommandBuilder()
@@ -36,11 +20,25 @@ export default new Command({
                 .setDescription("Reason for the timeout")
                 .setRequired(true)
             )
-            .addStringOption(option => option
+            .addIntegerOption(option => option
                 .setName("duration")
                 .setDescription("Duration of the timeout")
                 .setRequired(true)
-                .addChoices(timeoutDurations)
+                .addChoices(
+                    { name: "1 minute",   value: 60000 },
+                    { name: "5 minutes",  value: 300000 },
+                    { name: "10 minutes", value: 600000 },
+                    { name: "30 minutes", value: 1800000 },
+                    { name: "1 hour",     value: 3600000 },
+                    { name: "2 hours",    value: 7200000 },
+                    { name: "6 hours",    value: 21600000 },
+                    { name: "12 hours",   value: 43200000 },
+                    { name: "1 day",      value: 86400000 },
+                    { name: "2 days",     value: 172800000 },
+                    { name: "1 week",     value: 604800000 },
+                    { name: "2 weeks",    value: 1209600000 },
+                    { name: "1 month",    value: 2419200000 }
+                )
             )
         )
         .addSubcommand(subcommand => subcommand
@@ -66,18 +64,15 @@ export default new Command({
 
         const { member, user, moderator } = data;
         const reason = interaction.options.getString("reason", true);
-        const subcommand = interaction.options.getSubcommand() as "add" | "remove";
-        const isTimeout = subcommand === "add";
-        let embedFields: APIEmbedField[] | undefined;
+        let caseData: CaseData;
 
-        switch (subcommand) {
-            case "add":
-                const durationStr = interaction.options.getString("duration", true);
-                const duration = parseInt(durationStr);
+        switch (interaction.options.getSubcommand() as "add" | "remove") {
+            case "add": {
+                const duration = interaction.options.getInteger("duration", true);
 
                 member.timeout(duration, reason);
 
-                const userCase = await prisma.case.create({
+                caseData = await prisma.case.create({
                     data: {
                         type: CaseType.TIMEOUT,
                         userId: user.id,
@@ -86,27 +81,20 @@ export default new Command({
                         duration
                     }
                 });
-
-                embedFields = [
-                    { name: "Duration", value: timeoutDurations.find(t => t.value === durationStr)?.name ?? "Unknown", inline: true },
-                    { name: "Case ID", value: `\`${userCase.id}\``, inline: true },
-                    { name: "Expires", value: `<t:${Math.round((Date.now() + duration) / 1000)}:F>` },
-                ];
                 break;
-            case "remove":
+            }
+            case "remove": {
                 member.timeout(null, reason);
+                caseData = { type: CaseType.TIMEOUT, reason };
                 break;
+            }
         }
 
-        sendModActionEmbeds(
+        await sendModActionEmbeds(
             interaction,
             user,
             moderator,
-            isTimeout ? "timed out in" : "removed from timeout in",
-            isTimeout ? "Timed out" : "Removed timeout from",
-            reason,
-            embedFields,
-            isTimeout ? EmbedColors.error : EmbedColors.success
+            caseData
         );
     }
 });

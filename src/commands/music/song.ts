@@ -1,10 +1,10 @@
-import { type AudioPlayerState, AudioPlayerStatus, createAudioPlayer, createAudioResource, joinVoiceChannel, NoSubscriberBehavior, StreamType, VoiceConnection } from "@discordjs/voice";
-import { ActionRowBuilder, type APIEmbedField, ButtonBuilder, ButtonStyle, type ChatInputCommandInteraction, ComponentType, EmbedBuilder, type GuildMember, type MessageActionRowComponentBuilder, MessageFlags, SlashCommandBuilder, TextChannel, type VoiceBasedChannel } from "discord.js";
 import { createReadStream } from "node:fs";
 import { exists, mkdir } from "node:fs/promises";
-import YouTube, { Video } from "youtube-sr";
+import { type AudioPlayerState, AudioPlayerStatus, createAudioPlayer, createAudioResource, joinVoiceChannel, NoSubscriberBehavior, StreamType, type VoiceConnection } from "@discordjs/voice";
+import { ActionRowBuilder, type APIEmbedField, ButtonBuilder, type ButtonInteraction, ButtonStyle, type ChatInputCommandInteraction, Colors, ComponentType, EmbedBuilder, type GuildMember, type MessageActionRowComponentBuilder, SlashCommandBuilder, type TextChannel, type VoiceBasedChannel } from "discord.js";
+import YouTube, { type Video } from "youtube-sr";
 import { Command } from "../../utils/command";
-import { simpleEmbed, EmbedColors, simpleEmbedFollowUp } from "../../utils/misc";
+import { simpleEmbed, simpleEmbedFollowUp } from "../../utils/embed";
 
 enum QueueStatus {
     Downloading,
@@ -98,14 +98,18 @@ class SongManagerClass {
         }
     }
 
-    makeNowPlayingEmbed(video: Video, name: string, color: number): EmbedBuilder {
+    makeNowPlayingEmbed(video: Video, title: string, color: number): EmbedBuilder {
         return new EmbedBuilder()
-            .setAuthor({ iconURL: video.channel?.iconURL(), name })
+            .setAuthor({
+                iconURL: video.channel?.iconURL(),
+                name: video.channel?.name ?? "Unknown Channel",
+                url: video.channel?.url
+            })
             .setTitle(`**${video.title ?? "No Title"}**`)
             .setURL(video.url)
-            .setDescription(`[${video.channel?.name ?? "No Channel"}](${video.channel?.url})`)
             .setThumbnail(video.thumbnail?.displayThumbnailURL() ?? null)
             .setFields(
+                { name: " ", value: title },
                 { name: "Duration", value: `\`${video.durationFormatted}\``, inline: true },
                 { name: "Views", value: `\`${numberFormat.format(video.views)}\``, inline: true },
                 { name: "Uploaded", value: `\`${video.uploadedAt}\``, inline: true }
@@ -144,8 +148,8 @@ class SongManagerClass {
 
         this._status = QueueStatus.Playing;
         if (sendNowPlayingMessage) {
-            this.lastChannel?.send({
-                embeds: [this.makeNowPlayingEmbed(video, "Now Playing", EmbedColors.info)]
+            await this.lastChannel?.send({
+                embeds: [this.makeNowPlayingEmbed(video, "Now Playing", Colors.Blue)]
             });
         }
 
@@ -222,11 +226,11 @@ export default new Command({
     async execute(interaction: ChatInputCommandInteraction) {
         const channel = (interaction.member as GuildMember)?.voice.channel;
         if (!channel) {
-            simpleEmbedFollowUp(
+            await simpleEmbedFollowUp(
                 interaction,
                 "❌ Can't use command",
                 "You must be connected to a voice channel to use this command.",
-                EmbedColors.error,
+                Colors.Red,
                 true
             );
             return;
@@ -252,7 +256,7 @@ export default new Command({
                     )
                     .setThumbnail(videos[0]?.thumbnail?.displayThumbnailURL() ?? null)
                     .setFooter({ text: "Click a button below to add a song to the queue." })
-                    .setColor(EmbedColors.info);
+                    .setColor(Colors.Blue);
 
                 const buttons = Array.from({ length: videos.length }, (_, i) =>
                     new ButtonBuilder()
@@ -269,32 +273,32 @@ export default new Command({
                 const collector = message.createMessageComponentCollector({ componentType: ComponentType.Button, time: 120000 });
                 let madeSelection = false;
 
-                const disableButtons = () => {
+                const disableButtons = async() => {
                     row.components.forEach(btn => btn.setDisabled(true));
-                    interaction.editReply({ components: [row] });
+                    await interaction.editReply({ components: [row] });
                 };
 
-                collector.on("collect", i => {
+                collector.on("collect", async(i: ButtonInteraction) => {
                     if (madeSelection) return;
                     madeSelection = true;
+
+                    await disableButtons();
 
                     const selection = videos[parseInt(i.customId)];
                     if (!selection) {
                         const embed = simpleEmbed(
                             "❌ Unable to make selection",
                             null,
-                            EmbedColors.error
+                            Colors.Red
                         );
                         i.reply({ embeds: [embed] });
                         return;
                     }
 
-                    disableButtons();
-
                     SongManager.connect(channel);
                     SongManager.addToQueue(selection);
 
-                    const embed = SongManager.makeNowPlayingEmbed(selection, "Added to Queue", EmbedColors.success);
+                    const embed = SongManager.makeNowPlayingEmbed(selection, "Added to Queue", Colors.DarkGreen);
                     i.reply({ embeds: [embed] });
                 });
 
@@ -308,16 +312,16 @@ export default new Command({
             // TODO show who added what song in footer
             // TODO show error when song can't be skipped
             // TODO show current song in pause/unpause/skip embeds
-            // TODO embed for no results
+            // TODO search embed for no results
             case "play": {
                 const query = interaction.options.getString("query", true);
                 const video = (await YouTube.search(query, { type: "video", limit: 1 }))[0];
                 if (!video) {
-                    simpleEmbedFollowUp(
+                    await simpleEmbedFollowUp(
                         interaction,
                         `❌ No results for **${query}**`,
                         null,
-                        EmbedColors.error
+                        Colors.Red
                     );
                     return;
                 }
@@ -325,7 +329,7 @@ export default new Command({
                 SongManager.connect(channel);
                 SongManager.addToQueue(video);
 
-                const embed = SongManager.makeNowPlayingEmbed(video, "Added to Queue", EmbedColors.success);
+                const embed = SongManager.makeNowPlayingEmbed(video, "Added to Queue", Colors.DarkGreen);
                 await interaction.followUp({ embeds: [embed] });
                 break;
             }
@@ -355,7 +359,7 @@ export default new Command({
                         }))
                     )
                     .setThumbnail(SongManager.currentSong?.thumbnail?.displayThumbnailURL() ?? null)
-                    .setColor(EmbedColors.info);
+                    .setColor(Colors.Blue);
 
                 await interaction.followUp({ embeds: [embed] });
                 break;
@@ -363,11 +367,11 @@ export default new Command({
             case "nowplaying": {
                 const currentSong = SongManager.currentSong;
                 const embed = currentSong
-                    ? SongManager.makeNowPlayingEmbed(currentSong, "Now Playing", EmbedColors.info)
+                    ? SongManager.makeNowPlayingEmbed(currentSong, "Now Playing", Colors.Blue)
                     : simpleEmbed(
                         "Not playing anything",
                         "Use the /song play command to queue up a song!",
-                        EmbedColors.info
+                        Colors.Blue
                     );
                 await interaction.followUp({ embeds: [embed] });
                 break;
@@ -376,63 +380,63 @@ export default new Command({
             // TODO Make pause(), unpause(), and skip() return boolean, indicate
             case "pause": {
                 SongManager.pause();
-                simpleEmbedFollowUp(
+                await simpleEmbedFollowUp(
                     interaction,
                     "⏸️ Paused current song",
                     null,
-                    EmbedColors.success
+                    Colors.DarkGreen
                 );
                 break;
             }
             case "unpause": {
                 SongManager.unpause();
-                simpleEmbedFollowUp(
+                await simpleEmbedFollowUp(
                     interaction,
                     "▶️ Unpaused current song",
                     null,
-                    EmbedColors.success
+                    Colors.DarkGreen
                 );
                 break;
             }
             case "skip": {
                 SongManager.skip();
-                simpleEmbedFollowUp(
+                await simpleEmbedFollowUp(
                     interaction,
                     "⏩ Skipped current song",
                     null,
-                    EmbedColors.success
+                    Colors.DarkGreen
                 );
                 break;
             }
             case "remove": {
                 const index = interaction.options.getInteger("index", true) - 1;
                 if (!SongManager.queue[index]) {
-                    simpleEmbedFollowUp(
+                    await simpleEmbedFollowUp(
                         interaction,
                         "❌ That index doesn't exist in the queue",
                         null,
-                        EmbedColors.error
+                        Colors.Red
                     );
                     return;
                 }
 
                 SongManager.removeFromQueue(index);
 
-                simpleEmbedFollowUp(
+                await simpleEmbedFollowUp(
                     interaction,
                     "✂️ Removed song from queue",
                     null,
-                    EmbedColors.success
+                    Colors.DarkGreen
                 );
                 break;
             }
             case "stop": {
                 SongManager.disconnect();
-                simpleEmbedFollowUp(
+                await simpleEmbedFollowUp(
                     interaction,
                     "👋 So long!",
                     "Cleared queue and left voice channel.",
-                    EmbedColors.success
+                    Colors.DarkGreen
                 );
                 break;
             }

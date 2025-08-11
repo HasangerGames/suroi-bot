@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, PermissionsBitField, SlashCommandBuilder, TextChannel } from "discord.js";
+import { type ChatInputCommandInteraction, PermissionsBitField, SlashCommandBuilder, type TextChannel } from "discord.js";
 import { Command } from "../../utils/command";
 
 export default new Command({
@@ -17,7 +17,9 @@ export default new Command({
         .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageMessages),
     cooldown: 1000,
     async execute(interaction: ChatInputCommandInteraction) {
-        (interaction.channel as TextChannel).send({ content: interaction.options.getString("message", true) });
+        if (!interaction.channel?.isTextBased()) return;
+
+        await (interaction.channel as TextChannel).send({ content: interaction.options.getString("message", true) });
 
         await interaction.reply({ content: "Message sent." });
         interaction.deleteReply();

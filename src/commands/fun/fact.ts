@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { type ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import factsStr from "../../../facts.txt";
 import { Command } from "../../utils/command";
 import { pickRandomInArray } from "../../utils/misc";
@@ -11,6 +11,6 @@ export default new Command({
         .setDescription("Send a random fun fact"),
     cooldown: 2000,
     async execute(interaction: ChatInputCommandInteraction) {
-        interaction.reply({ content: pickRandomInArray(facts) });
+        await interaction.reply({ content: pickRandomInArray(facts) });
     }
 });

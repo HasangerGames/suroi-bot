@@ -1,6 +1,6 @@
-import { ChatInputCommandInteraction, PermissionsBitField, SlashCommandBuilder } from "discord.js";
+import { type ChatInputCommandInteraction, Colors, PermissionsBitField, SlashCommandBuilder } from "discord.js";
 import { Command } from "../../utils/command";
-import { EmbedColors, simpleEmbed } from "../../utils/misc";
+import { simpleEmbed } from "../../utils/embed";
 
 export default new Command({
     data: new SlashCommandBuilder()
@@ -12,7 +12,7 @@ export default new Command({
         const embed = simpleEmbed(
             "🔄 Restarting bot...",
             null,
-            EmbedColors.success
+            Colors.DarkGreen
         );
         await interaction.reply({ embeds: [embed] });
         process.exit();

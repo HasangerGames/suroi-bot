@@ -1,4 +1,4 @@
-import { type ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { type ChatInputCommandInteraction, Colors, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { Command } from "../../utils/command";
 
 export default new Command({
@@ -24,6 +24,11 @@ export default new Command({
         .addBooleanOption(option => option
             .setName("timestamp")
             .setDescription("Whether to add a timestamp to the embed")
+        )
+        .addIntegerOption(option => option
+            .setName("color")
+            .setDescription("The color of the embed")
+            .addChoices(Object.entries(Colors).map(([name, value]) => ({ name, value })).slice(0, 25))
         ),
     cooldown: 2000,
     async execute(interaction: ChatInputCommandInteraction) {
@@ -34,7 +39,8 @@ export default new Command({
             .setTitle(interaction.options.getString("title"))
             .setDescription(interaction.options.getString("description"))
             .setFooter(footer ? { text: footer } : null)
-            .setTimestamp(interaction.options.getBoolean("timestamp") ? new Date() : null);
-        interaction.reply({ embeds: [embed] });
+            .setTimestamp(interaction.options.getBoolean("timestamp") ? new Date() : null)
+            .setColor(interaction.options.getInteger("color"));
+        await interaction.reply({ embeds: [embed] });
     }
 });

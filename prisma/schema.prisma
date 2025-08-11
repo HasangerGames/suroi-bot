@@ -12,13 +12,11 @@ model User {
   xp            Decimal @default(1.0)
   level         Int     @default(1)
   xpToNextLevel Decimal @default(1.0)
-  cases         Case[]
 }
 
 model Case {
   id          Int      @id @default(autoincrement())
   type        CaseType
-  user        User     @relation(fields: [userId], references: [userId])
   userId      String
   moderatorId String
   reason      String
@@ -27,6 +25,7 @@ model Case {
 }
 
 enum CaseType {
+  VERBAL_WARNING
   WARNING
   TIMEOUT
   KICK

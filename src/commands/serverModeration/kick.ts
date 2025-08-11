@@ -1,7 +1,7 @@
 import { CaseType } from "@prisma/client";
 import { ChatInputCommandInteraction, PermissionsBitField, SlashCommandBuilder } from "discord.js";
 import { Command } from "../../utils/command";
-import { EmbedColors, modActionPreCheck, prisma, sendModActionEmbeds } from "../../utils/misc";
+import { modActionPreCheck, prisma, sendModActionEmbeds } from "../../utils/misc";
 
 export default new Command({
     data: new SlashCommandBuilder()
@@ -27,9 +27,9 @@ export default new Command({
         const { member, user, moderator } = data;
         const reason = interaction.options.getString("reason", true);
 
-        member.kick(reason);
+        const callback = async() => await member.kick(reason);
 
-        const userCase = await prisma.case.create({
+        const caseData = await prisma.case.create({
             data: {
                 type: CaseType.KICK,
                 userId: user.id,
@@ -38,15 +38,12 @@ export default new Command({
             }
         });
 
-        sendModActionEmbeds(
+        await sendModActionEmbeds(
             interaction,
             user,
             moderator,
-            "kicked from",
-            "Kicked",
-            reason,
-            [{ name: "Case ID", value: `\`${userCase.id}\``, inline: true }],
-            EmbedColors.error
+            caseData,
+            callback
         );
     }
 });

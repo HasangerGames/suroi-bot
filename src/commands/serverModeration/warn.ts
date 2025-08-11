@@ -1,7 +1,7 @@
 import { CaseType } from "@prisma/client";
-import { ChatInputCommandInteraction, PermissionsBitField, SlashCommandBuilder } from "discord.js";
+import { type ChatInputCommandInteraction, PermissionsBitField, SlashCommandBuilder } from "discord.js";
 import { Command } from "../../utils/command";
-import { EmbedColors, modActionPreCheck, prisma, sendModActionEmbeds } from "../../utils/misc";
+import { modActionPreCheck, prisma, sendModActionEmbeds } from "../../utils/misc";
 
 export default new Command({
     data: new SlashCommandBuilder()
@@ -27,7 +27,7 @@ export default new Command({
         const { user, moderator } = data;
         const reason = interaction.options.getString("reason", true);
 
-        const userCase = await prisma.case.create({
+        const caseData = await prisma.case.create({
             data: {
                 type: CaseType.WARNING,
                 userId: user.id,
@@ -36,15 +36,11 @@ export default new Command({
             }
         });
 
-        sendModActionEmbeds(
+        await sendModActionEmbeds(
             interaction,
             user,
             moderator,
-            "warned in",
-            "Warned",
-            reason,
-            [{ name: "Case ID", value: `\`${userCase.id}\``, inline: true }],
-            EmbedColors.warning
+            caseData
         );
     }
 });
