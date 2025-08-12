@@ -1,7 +1,7 @@
 import { CaseType } from "@prisma/client";
 import { type ChatInputCommandInteraction, Colors, EmbedBuilder, PermissionsBitField, SlashCommandBuilder, type User } from "discord.js";
 import { Command } from "../../utils/command";
-import { type CaseData, modActionPreCheck, prisma, sendModActionEmbeds } from "../../utils/misc";
+import { type CaseData, logModAction, modActionPreCheck, prisma } from "../../utils/misc";
 
 const appealDurations = [
     { name: "1 month",     value: 2629800000 },
@@ -126,7 +126,7 @@ export default new Command({
             }
         }
 
-        await sendModActionEmbeds(
+        await logModAction(
             interaction,
             user,
             interaction.user,

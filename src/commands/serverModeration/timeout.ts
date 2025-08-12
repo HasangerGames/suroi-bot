@@ -1,7 +1,7 @@
 import { CaseType } from "@prisma/client";
 import { type ChatInputCommandInteraction, PermissionsBitField, SlashCommandBuilder } from "discord.js";
 import { Command } from "../../utils/command";
-import { type CaseData, modActionPreCheck, prisma, sendModActionEmbeds } from "../../utils/misc";
+import { type CaseData, logModAction, modActionPreCheck, prisma } from "../../utils/misc";
 
 export default new Command({
     data: new SlashCommandBuilder()
@@ -70,7 +70,7 @@ export default new Command({
             case "add": {
                 const duration = interaction.options.getInteger("duration", true);
 
-                member.timeout(duration, reason);
+                await member.timeout(duration, reason);
 
                 caseData = await prisma.case.create({
                     data: {
@@ -84,13 +84,13 @@ export default new Command({
                 break;
             }
             case "remove": {
-                member.timeout(null, reason);
+                await member.timeout(null, reason);
                 caseData = { type: CaseType.TIMEOUT, reason };
                 break;
             }
         }
 
-        await sendModActionEmbeds(
+        await logModAction(
             interaction,
             user,
             moderator,

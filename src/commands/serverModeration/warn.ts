@@ -1,7 +1,7 @@
 import { CaseType } from "@prisma/client";
 import { type ChatInputCommandInteraction, PermissionsBitField, SlashCommandBuilder } from "discord.js";
 import { Command } from "../../utils/command";
-import { modActionPreCheck, prisma, sendModActionEmbeds } from "../../utils/misc";
+import { logModAction, modActionPreCheck, prisma } from "../../utils/misc";
 
 export default new Command({
     data: new SlashCommandBuilder()
@@ -36,7 +36,7 @@ export default new Command({
             }
         });
 
-        await sendModActionEmbeds(
+        await logModAction(
             interaction,
             user,
             moderator,

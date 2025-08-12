@@ -1,5 +1,5 @@
 import { CaseType, PrismaClient } from "@prisma/client";
-import { type APIEmbedField, ChannelType, type ChatInputCommandInteraction, Colors, EmbedBuilder, type Guild, GuildMember, type TextChannel, type User } from "discord.js";
+import { type APIEmbedField, type Attachment, ChannelType, type ChatInputCommandInteraction, Colors, EmbedBuilder, type Guild, GuildMember, type Message, type PartialMessage, type TextChannel, type User } from "discord.js";
 import { Config } from "./config";
 
 export const prisma = new PrismaClient();
@@ -100,7 +100,7 @@ export interface CaseData {
     readonly duration?: bigint | number
 }
 
-export async function sendModActionEmbeds(
+export async function logModAction(
     interaction: ChatInputCommandInteraction,
     user: User,
     moderator: User,
@@ -202,6 +202,36 @@ export async function modActionPreCheck(
         user: member.user,
         moderator: interaction.user
     };
+}
+
+export async function logRemovedAttachments(removedAttachments: Attachment[], message: Message | PartialMessage, logChannel: TextChannel, messageLink?: string) {
+    const author = message.author;
+    if (!author) return;
+
+    const hasSingleImage = removedAttachments.length === 1 && removedAttachments[0]?.contentType?.startsWith("image/");
+    const files = hasSingleImage ? undefined : removedAttachments;
+
+    const embed = new EmbedBuilder()
+        .setAuthor({
+            name: author.username,
+            iconURL: author.displayAvatarURL()
+        })
+        .setDescription(
+            `### **🗑️ ${removedAttachments.length === 1 ? "Attachment" : "Attachments"} by <@${author.id}> removed in <#${message.channelId}>**\n` +
+            (messageLink ?? "") +
+            `\`\`\`diff` +
+            // empty string inserts a delimiter at the beginning when using .join
+            `${["", ...removedAttachments.map(({ name }) => name)].join("\n- 📎")}\n` +
+            `\`\`\``
+        )
+        .setImage(hasSingleImage ? removedAttachments[0]?.url ?? null : null)
+        .setColor(Colors.Red)
+        .setFooter({ text: `User ID: ${author.id}` })
+        .setTimestamp();
+
+    // send them separately so the attachments appear below the embed
+    await logChannel.send({ embeds: [embed] });
+    await logChannel.send({ files });
 }
 
 export async function getModLogChannel(guild: Guild | null): Promise<TextChannel> {
