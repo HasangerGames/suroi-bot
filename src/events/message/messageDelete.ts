@@ -19,7 +19,7 @@ export default new EventHandler(Events.MessageDelete, async message => {
                 // For messages with links, we avoid using the diff view because it prevents them from resolving
                 (linkRegex.test(message.content)
                     // embed descriptions have a maximum length of 4096 chars, so we truncate it here to leave room for the rest of the description
-                    ? truncateString(`\\- ${message.content.replaceAll("\n", "\n\\- ")}`, 3896)
+                    ? truncateString(message.content, 3896)
                     : (
                         `\`\`\`diff\n` +
                         truncateString(`- ${message.content.replaceAll("\n", "\n- ")}\n`, 3896) +

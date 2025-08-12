@@ -35,8 +35,7 @@ const client = new Client({
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildModeration
-    ],
-    partials: [Partials.Message]
+    ]
 });
 
 console.log("Registering events...");

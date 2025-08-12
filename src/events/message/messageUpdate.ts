@@ -6,12 +6,6 @@ export default new EventHandler(Events.MessageUpdate, async(oldMessage, newMessa
     const author = newMessage.author;
     if (author.bot) return;
 
-    // no point in fetching oldMessage if it's partial cause it'll be the same as newMessage
-
-    if (newMessage.partial) {
-        newMessage = await newMessage.fetch();
-    }
-
     const guild = newMessage.guild;
     const logChannel = await getModLogChannel(guild);
     const messageLink = `[Jump to message](https://discord.com/channels/${newMessage.guildId}/${newMessage.channelId}/${newMessage.id})\n`;
@@ -27,7 +21,7 @@ export default new EventHandler(Events.MessageUpdate, async(oldMessage, newMessa
         await logRemovedAttachments(removedAttachments, newMessage, logChannel, messageLink);
     }
 
-    const oldContent = oldMessage.content ?? "[Content not available]";
+    const oldContent = oldMessage.content ?? "";
     const newContent = newMessage.content;
     if (!newContent || oldContent === newContent) return;
 
@@ -37,7 +31,6 @@ export default new EventHandler(Events.MessageUpdate, async(oldMessage, newMessa
         await newMessage.delete();
         return;
     }
-
 
     const oldContentFormatted = `\\- ${oldContent.replaceAll("\n", "\n\\- ")}`;
     const newContentFormatted = `+ ${newContent.replaceAll("\n", "\n+ ")}`;
