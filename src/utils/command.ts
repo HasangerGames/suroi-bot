@@ -5,7 +5,7 @@ export class Command {
     readonly data: RESTPostAPIApplicationCommandsJSONBody;
     readonly cooldown: number;
     readonly deferred: boolean;
-    private _execute: (interaction: ChatInputCommandInteraction) => void;
+    private _execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
     lastRun = 0;
 
     constructor(
@@ -13,7 +13,7 @@ export class Command {
             data: SharedSlashCommand,
             cooldown: number,
             deferred?: boolean,
-            execute: (interaction: ChatInputCommandInteraction) => void
+            execute: (interaction: ChatInputCommandInteraction) => Promise<void>
         }
     ) {
         this.data = data.toJSON();
