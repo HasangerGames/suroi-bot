@@ -1,6 +1,6 @@
 import { Colors, EmbedBuilder, Events } from "discord.js";
-import { EventHandler } from "../utils/eventHandler";
-import { getModLogChannel, logRemovedAttachments } from "../utils/misc";
+import { EventHandler } from "../../utils/eventHandler";
+import { getModLogChannel, linkRegex, logRemovedAttachments, truncateString } from "../../utils/misc";
 
 export default new EventHandler(Events.MessageDelete, async message => {
     const author = message.author;
@@ -15,10 +15,17 @@ export default new EventHandler(Events.MessageDelete, async message => {
                 iconURL: author.displayAvatarURL()
             })
             .setDescription(
-                `### **🗑️ Message by <@${author.id}> deleted in <#${message.channelId}>**\n` +
-                `\`\`\`diff\n` +
-                `- ${message.content?.replaceAll("\n", "\n- ") ?? ""}\n` +
-                `\`\`\``
+                `### 🗑️ Message by <@${author.id}> deleted in <#${message.channelId}>\n` +
+                // For messages with links, we avoid using the diff view because it prevents them from resolving
+                (linkRegex.test(message.content)
+                    // embed descriptions have a maximum length of 4096 chars, so we truncate it here to leave room for the rest of the description
+                    ? truncateString(`\\- ${message.content.replaceAll("\n", "\n\\- ")}`, 3896)
+                    : (
+                        `\`\`\`diff\n` +
+                        truncateString(`- ${message.content.replaceAll("\n", "\n- ")}\n`, 3896) +
+                        `\`\`\``
+                    )
+                )
             )
             .setColor(Colors.Red)
             .setFooter({ text: `User ID: ${author.id}` })

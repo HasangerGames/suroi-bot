@@ -1,5 +1,5 @@
 import { type ChatInputCommandInteraction, MessageFlags, PermissionsBitField, SlashCommandBuilder } from "discord.js";
-import { toggleReactionSpam } from "../../events/messageCreate";
+import { toggleReactionSpam } from "../../events/message/messageCreate";
 import { Command } from "../../utils/command";
 
 export default new Command({

@@ -1,5 +1,5 @@
 import { Glob } from "bun";
-import { Client, Events, GatewayIntentBits, REST, Routes } from "discord.js";
+import { Client, Events, GatewayIntentBits, Partials, REST, Routes } from "discord.js";
 import type { Command } from "./utils/command";
 import { Config } from "./utils/config";
 import type { EventHandler } from "./utils/eventHandler";
@@ -35,7 +35,8 @@ const client = new Client({
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildModeration
-    ]
+    ],
+    partials: [Partials.Message]
 });
 
 console.log("Registering events...");

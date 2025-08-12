@@ -9,6 +9,10 @@ export function pickRandomInArray<T>(array: T[]): T {
     return array[Math.floor(Math.random() * array.length)] as T;
 }
 
+export const linkRegex = /<(@|@&|#|:[^\s]*:)\d+>|<t:\d+:[FfDdTtR]>|https?:\/\//;
+
+export const truncateString = (content: string, maxLength: number): string => content.length > maxLength ? `${content.slice(0, maxLength - 1)}…` : content;
+
 export const caseDurationToString: Record<number, string> = {
     "60000": "1 minute",
     "300000": "5 minutes",

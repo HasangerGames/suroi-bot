@@ -1,6 +1,6 @@
 import { Events } from "discord.js";
-import { EventHandler } from "../utils/eventHandler";
-import { getRandomEmoji } from "../utils/emoji";
+import { getRandomEmoji } from "../../utils/emoji";
+import { EventHandler } from "../../utils/eventHandler";
 
 let reactionSpam = false;
 export function toggleReactionSpam(): boolean {
