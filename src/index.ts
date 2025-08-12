@@ -42,9 +42,9 @@ console.log("Registering events...");
 const eventGlob = new Glob("events/**/*.ts");
 for await (const file of eventGlob.scan("src")) {
     const { event, listener }: EventHandler<never> = (await import(`./${file}`)).default;
-    client.on(event, (...args) => {
+    client.on(event, async(...args) => {
         try {
-            listener(...args);
+            await listener(...args);
         } catch (e) {
             console.error(`An error occurred when trying to execute event handler '${event}'. Details:`);
             console.error(e);
