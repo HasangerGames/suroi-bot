@@ -124,10 +124,6 @@ export async function sendModActionEmbeds(
 
     const embedFields: APIEmbedField[] = [];
 
-    if (caseWasAdded) {
-        embedFields.push({ name: `Case **#${caseId}**`, value: " " });
-    }
-
     embedFields.push({ name: "Reason", value: reason });
 
     if (duration) {
@@ -159,7 +155,10 @@ export async function sendModActionEmbeds(
             name: user.username,
             iconURL: user.displayAvatarURL() ?? undefined
         })
-        .setTitle(`${emoji} ${caseWasAdded ? modAddedText : modRemovedText} **${user.displayName}**`)
+        .setDescription(
+            `### ${emoji} ${caseWasAdded ? modAddedText : modRemovedText} <@${user.id}>` +
+            (caseWasAdded ? `\n**Case #${caseId}**` : "")
+        )
         .addFields(embedFields)
         .setColor(embedColor)
         .setFooter({ text: `User ID: ${user.id}` })
@@ -173,7 +172,7 @@ export async function sendModActionEmbeds(
 export async function modActionPreCheck(
     interaction: ChatInputCommandInteraction,
     actionType: string,
-    guardProp: keyof GuildMember
+    guardProp?: keyof GuildMember
 ): Promise<{ member: GuildMember, user: User, moderator: User } | undefined> {
     const member = interaction.options.getMember("user");
 
@@ -186,14 +185,13 @@ export async function modActionPreCheck(
         return;
     }
 
-    if (!member[guardProp]) {
+    if (guardProp && !member[guardProp]) {
         const embed = new EmbedBuilder()
             .setAuthor({
                 name: member.user.username,
                 iconURL: member.user.avatarURL() ?? undefined
             })
-            .setTitle(`❌ Unable to ${actionType} **${member.displayName}**`)
-            .setDescription("This user is immune to this action")
+            .setDescription(`### ❌ Unable to ${actionType} <@${member.id}>\nThis user is immune to this action`)
             .setColor(Colors.Red);
         await interaction.followUp({ embeds: [embed] });
         return;

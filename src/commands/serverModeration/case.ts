@@ -41,7 +41,6 @@ export default new Command({
     deferred: true,
     async execute(interaction: ChatInputCommandInteraction) {
         const subcommand = interaction.options.getSubcommand() as "list" | "info" | "delete";
-
         switch (subcommand) {
             case "list": {
                 const user = interaction.options.getUser("user");
@@ -82,7 +81,7 @@ export default new Command({
                         const actionData = modActionData[c.type];
                         const duration = Number(c.duration);
                         return {
-                            name: `Case #**${c.id}**`,
+                            name: `${actionData.emoji} Case #**${c.id}**`,
                             value:
                                 `||||| **Type**: ${actionData.name}\n` +
                                 `||||| **Reason**: ${c.reason}\n` +
@@ -99,7 +98,7 @@ export default new Command({
                         name: user.username,
                         iconURL: user.displayAvatarURL()
                     })
-                    .setTitle(`🔨 ${count} ${count === 1 ? "case" : "cases"} for **${user.displayName}**`)
+                    .setDescription(`### 📋 ${count === 0 ? "No" : `Viewing ${count}`} ${count === 1 ? "case" : "cases"} for <@${user.id}>`)
                     .addFields(await getCaseFields())
                     .setColor(Colors.Aqua)
                     .setFooter({ text: `User ID: ${user.id}` });
@@ -222,7 +221,7 @@ export default new Command({
                         name: user.username,
                         iconURL: user.displayAvatarURL() ?? undefined
                     })
-                    .setTitle(`${actionData.emoji} ${isInfo ? "Case" : "Deleting Case"} #**${id}**`)
+                    .setDescription(`### ${actionData.emoji} ${isInfo ? "Viewing" : "Deleting"} Case #**${id}**`)
                     .addFields(embedFields)
                     .setColor(isInfo ? Colors.Aqua : Colors.Red)
                     .setFooter({ text: `User ID: ${user.id}` });
@@ -263,7 +262,7 @@ export default new Command({
                         await prisma.case.delete({ where: { id } });
 
                         deleteEmbed
-                            .setTitle(`${actionData.emoji} Case #**${id}** Deleted`)
+                            .setDescription(`### ${actionData.emoji} Case #**${id}** Deleted`)
                             .addFields({ name: "Case Deleted By", value: `<@${interaction.user.id}>` });
                         const logChannel = await getModLogChannel(interaction.guild);
                         logChannel.send({ embeds: [deleteEmbed] });

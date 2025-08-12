@@ -21,7 +21,7 @@ export default new Command({
     cooldown: 0,
     deferred: true,
     async execute(interaction: ChatInputCommandInteraction) {
-        const data = await modActionPreCheck(interaction, "warn", "moderatable");
+        const data = await modActionPreCheck(interaction, "warn");
         if (!data) return;
 
         const { user, moderator } = data;
