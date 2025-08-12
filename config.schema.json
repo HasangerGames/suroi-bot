@@ -24,8 +24,21 @@
         "moderationLogChannelId": {
             "description": "The ID of the channel to send moderation logs to.",
             "type": "string"
+        },
+        "auditLogChannelId": {
+            "description": "The ID of the channel to send audit logs to.",
+            "type": "string"
         }
     },
-    "required": ["$schema", "token", "clientId", "guildId", "roles", "moderatorRoleId", "moderationLogChannelId"],
+    "required": [
+        "$schema",
+        "token",
+        "clientId",
+        "guildId",
+        "roles",
+        "moderatorRoleId",
+        "moderationLogChannelId",
+        "auditLogChannelId"
+    ],
     "additionalProperties": false
 }

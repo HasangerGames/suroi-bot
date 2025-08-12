@@ -235,8 +235,12 @@ export async function logRemovedAttachments(removedAttachments: Attachment[], me
 }
 
 export async function getModLogChannel(guild: Guild | null): Promise<TextChannel> {
+    return await getTextChannelById(guild, Config.moderationLogChannelId);
+}
+
+export async function getTextChannelById(guild: Guild | null, id: string): Promise<TextChannel> {
     if (!guild) throw new Error("Guild not found");
-    const logChannel = await guild.channels.fetch(Config.moderationLogChannelId);
+    const logChannel = await guild.channels.fetch(id);
     if (!logChannel) throw new Error("Moderation log channel not found");
     if (logChannel.type !== ChannelType.GuildText) throw new Error("Moderation log channel is not a text channel");
     return logChannel;

@@ -7,6 +7,10 @@
 
 export interface ConfigSchema {
   /**
+   * Reference to this schema.
+   */
+  $schema: "config.schema.json";
+  /**
    * The bot's Discord token.
    */
   token: string;
@@ -26,4 +30,8 @@ export interface ConfigSchema {
    * The ID of the channel to send moderation logs to.
    */
   moderationLogChannelId: string;
+  /**
+   * The ID of the channel to send audit logs to.
+   */
+  auditLogChannelId: string;
 }
