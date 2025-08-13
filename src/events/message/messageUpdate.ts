@@ -32,14 +32,12 @@ export default new EventHandler(Events.MessageUpdate, async(oldMessage, newMessa
         return;
     }
 
-    const oldContentFormatted = `\\- ${oldContent.replaceAll("\n", "\n\\- ")}`;
-    const newContentFormatted = `+ ${newContent.replaceAll("\n", "\n+ ")}`;
     // For messages with links, we avoid using the diff view because it prevents them from resolving
     const useDiff =
         (!linkRegex.test(oldContent) && !linkRegex.test(newContent))
         // Discord embed field values are limited to 1024 characters
-        || oldContentFormatted.length > 1024
-        || newContentFormatted.length > 1024;
+        || oldContent.length > 1024
+        || newContent.length > 1024;
 
     const embed = new EmbedBuilder()
         .setAuthor({
@@ -60,8 +58,8 @@ export default new EventHandler(Events.MessageUpdate, async(oldMessage, newMessa
         )
         .setFields(
             useDiff ? [] : [
-                ...(oldContent.length ? [{ name: "Old Message", value: oldContentFormatted }] : []),
-                { name: "New Message", value: newContentFormatted }
+                ...(oldContent.length ? [{ name: "Old Message", value: oldContent }] : []),
+                { name: "New Message", value: newContent }
             ]
         )
         .setColor(Colors.Blurple)

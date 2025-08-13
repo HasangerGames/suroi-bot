@@ -72,7 +72,7 @@ export default new Command({
                 const getCaseFields = async(): Promise<APIEmbedField[]> => {
                     const cases = await prisma.case.findMany({
                         where: { userId: user.id },
-                        orderBy: { id: "desc" },
+                        orderBy: { createdAt: "desc" },
                         take: 5,
                         skip: 5 * page
                     });
