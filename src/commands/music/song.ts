@@ -1,6 +1,6 @@
 import { createReadStream } from "node:fs";
 import { exists, mkdir } from "node:fs/promises";
-import { type AudioPlayerState, AudioPlayerStatus, createAudioPlayer, createAudioResource, joinVoiceChannel, NoSubscriberBehavior, StreamType, type VoiceConnection } from "@discordjs/voice";
+import { type AudioPlayerState, AudioPlayerStatus, createAudioPlayer, createAudioResource, joinVoiceChannel, NoSubscriberBehavior, StreamType, type VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import { ActionRowBuilder, type APIEmbedField, ButtonBuilder, type ButtonInteraction, ButtonStyle, type ChatInputCommandInteraction, Colors, ComponentType, EmbedBuilder, type GuildMember, type MessageActionRowComponentBuilder, SlashCommandBuilder, type TextChannel, type VoiceBasedChannel } from "discord.js";
 import YouTube, { type Video } from "youtube-sr";
 import { Command } from "../../utils/command";
@@ -50,15 +50,21 @@ class SongManagerClass {
             guildId: channel.guildId,
             adapterCreator: channel.guild.voiceAdapterCreator,
         });
+
+        this.connection.on("stateChange", (_, newState) => {
+            if (newState.status !== VoiceConnectionStatus.Disconnected) return;
+
+            this.currentDownload?.kill();
+            this.connection = undefined;
+            this.queue = [];
+            this._status = QueueStatus.Idle;
+        });
+
         this.connection.subscribe(this._player);
     }
 
     disconnect(): void {
-        this.currentDownload?.kill();
         this.connection?.destroy();
-        this.connection = undefined;
-        this.queue = [];
-        this._status = QueueStatus.Idle;
     }
 
     async addToQueue(video: Video): Promise<void> {
@@ -161,7 +167,7 @@ class SongManagerClass {
     }
 }
 
-const SongManager = new SongManagerClass();
+export const SongManager = new SongManagerClass();
 
 const numberFormat = Intl.NumberFormat("en", { notation: "standard" });
 const selectionEmojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"];
