@@ -1,5 +1,5 @@
 import { Glob } from "bun";
-import { Client, GatewayIntentBits, REST, Routes } from "discord.js";
+import { ActivityType, Client, GatewayIntentBits, REST, Routes } from "discord.js";
 import type { Command } from "./utils/command";
 import { Config } from "./utils/config";
 import type { EventHandler } from "./utils/eventHandler";
@@ -14,7 +14,14 @@ const client = new Client({
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildModeration
-    ]
+    ],
+    presence: {
+        activities: [{
+            type: ActivityType.Playing,
+            name: "Suroi",
+            url: "https://suroi.io"
+        }]
+    }
 });
 
 console.log("Registering commands...");
