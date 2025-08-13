@@ -1,16 +1,21 @@
 import { Glob } from "bun";
-import { Client, Events, GatewayIntentBits, REST, Routes } from "discord.js";
+import { Client, GatewayIntentBits, REST, Routes } from "discord.js";
 import type { Command } from "./utils/command";
 import { Config } from "./utils/config";
 import type { EventHandler } from "./utils/eventHandler";
 
-const errorHandler = (e: unknown) => {
-    console.error("An unhandled error occurred. Details:");
-    console.error(e);
-    process.exit(1);
-};
-process.on("uncaughtException", errorHandler);
-process.on("unhandledRejection", errorHandler);
+console.log("SuroiBot v4.0.0");
+console.log("Initializing client...");
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildModeration
+    ]
+});
 
 console.log("Registering commands...");
 export const commands: Map<string, Command> = new Map();
@@ -26,18 +31,6 @@ await rest.put(
     { body: Array.from(commands.values()).map(({ data }) => data) }
 );
 
-console.log("Initializing client...");
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildModeration
-    ]
-});
-
 console.log("Registering events...");
 const eventGlob = new Glob("events/**/*.ts");
 for await (const file of eventGlob.scan("src")) {
@@ -51,9 +44,5 @@ for await (const file of eventGlob.scan("src")) {
         }
     });
 }
-
-client.once(Events.ClientReady, async readyClient => {
-    console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-});
 
 client.login(Config.token);

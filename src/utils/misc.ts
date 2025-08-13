@@ -223,9 +223,8 @@ export async function logRemovedAttachments(removedAttachments: Attachment[], me
         .setDescription(
             `### **🗑️ ${removedAttachments.length === 1 ? "Attachment" : "Attachments"} by <@${author.id}> removed in <#${message.channelId}>**\n` +
             (messageLink ?? "") +
-            `\`\`\`diff` +
-            // empty string inserts a delimiter at the beginning when using .join
-            `${["", ...removedAttachments.map(({ name }) => name)].join("\n- 📎")}\n` +
+            `\`\`\`diff\n` +
+            `- 📎${removedAttachments.map(({ name }) => name).join("\n- 📎")}\n` +
             `\`\`\``
         )
         .setImage(hasSingleImage ? removedAttachments[0]?.url ?? null : null)
