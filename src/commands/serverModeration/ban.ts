@@ -1,5 +1,5 @@
 import { CaseType } from "@prisma/client";
-import { type ChatInputCommandInteraction, Colors, EmbedBuilder, PermissionsBitField, SlashCommandBuilder, type User } from "discord.js";
+import { type ChatInputCommandInteraction, Colors, EmbedBuilder, GuildMember, PermissionsBitField, SlashCommandBuilder, type User } from "discord.js";
 import { Command } from "../../utils/command";
 import { type CaseData, logModAction, prisma } from "../../utils/misc";
 
@@ -79,6 +79,19 @@ export default new Command({
 
         const guild = interaction.guild;
         if (!guild) throw new Error("Unknown guild");
+
+        const member = interaction.options.getMember("user");
+        if (member instanceof GuildMember && !member.bannable) {
+            const embed = new EmbedBuilder()
+                .setAuthor({
+                    name: member.user.username,
+                    iconURL: member.user.displayAvatarURL() ?? undefined
+                })
+                .setDescription(`### ❌ Unable to ban <@${member.id}>\nThis user is immune to this action`)
+                .setColor(Colors.Red);
+            await interaction.followUp({ embeds: [embed] });
+            return;
+        }
 
         const userId = user.id;
         const bans = await guild.bans.fetch();
