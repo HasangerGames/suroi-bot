@@ -140,16 +140,22 @@ export async function logModAction(
     embedFields.push({ name: "Responsible Moderator", value: `<@${moderator.id}>` });
 
     if (type !== CaseType.BAN || caseWasAdded) { // we can't tell users they were unbanned because the bot doesn't share a guild with them
-        const dmEmbed = new EmbedBuilder()
-            .setAuthor({
-                name: moderator.displayName,
-                iconURL: moderator.displayAvatarURL() ?? undefined
-            })
-            .setTitle(`${emoji} You have been ${caseWasAdded ? userAddedText : userRemovedText} **Suroi**`)
-            .addFields(embedFields)
-            .setColor(embedColor)
-            .setTimestamp();
-        await user.send({ embeds: [dmEmbed] });
+        try {
+            const dmEmbed = new EmbedBuilder()
+                .setAuthor({
+                    name: moderator.displayName,
+                    iconURL: moderator.displayAvatarURL() ?? undefined
+                })
+                .setTitle(`${emoji} You have been ${caseWasAdded ? userAddedText : userRemovedText} **Suroi**`)
+                .setDescription(caseWasAdded ? `**Case #${caseId}**` : "")
+                .addFields(embedFields)
+                .setColor(embedColor)
+                .setTimestamp();
+            await user.send({ embeds: [dmEmbed] });
+        } catch (e) {
+            console.error("Unable to DM user to inform them of mod action. Details:");
+            console.error(e);
+        }
     }
 
     await callback?.();

@@ -1,7 +1,7 @@
 import { CaseType } from "@prisma/client";
 import { type ChatInputCommandInteraction, Colors, EmbedBuilder, PermissionsBitField, SlashCommandBuilder, type User } from "discord.js";
 import { Command } from "../../utils/command";
-import { type CaseData, logModAction, modActionPreCheck, prisma } from "../../utils/misc";
+import { type CaseData, logModAction, prisma } from "../../utils/misc";
 
 const appealDurations = [
     { name: "1 month",     value: 2629800000 },
@@ -50,9 +50,9 @@ export default new Command({
         .addSubcommand(subcommand => subcommand
             .setName("remove")
             .setDescription("Unban a user")
-            .addStringOption(option => option
-                .setName("id")
-                .setDescription("The ID of the user to unban")
+            .addUserOption(option => option
+                .setName("user")
+                .setDescription("The user to unban")
                 .setRequired(true)
             )
             .addStringOption(option => option
@@ -67,28 +67,46 @@ export default new Command({
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply();
 
-        let user: User;
+        const user = interaction.options.getUser("user");
+        if (!user) {
+            const embed = new EmbedBuilder()
+                .setTitle("❌ Unknown user")
+                .setDescription("Could not find that user.")
+                .setColor(Colors.Red);
+            await interaction.followUp({ embeds: [embed] });
+            return;
+        }
+
+        const guild = interaction.guild;
+        if (!guild) throw new Error("Unknown guild");
+
+        const userId = user.id;
+        const bans = await guild.bans.fetch();
         const reason = interaction.options.getString("reason", true);
         let caseData: CaseData;
         let callback: (() => Promise<unknown>) | undefined;
 
         switch (interaction.options.getSubcommand() as "add" | "remove") {
             case "add": {
-                const data = await modActionPreCheck(interaction, "ban", "bannable");
-                if (!data) return;
+                if (bans.has(userId)) {
+                    const embed = new EmbedBuilder()
+                        .setTitle("❌ Unable to ban user")
+                        .setDescription("User is already banned from this server.")
+                        .setColor(Colors.Red);
+                    await interaction.followUp({ embeds: [embed] });
+                    return;
+                }
 
-                user = data.user;
-                const { member, moderator } = data;
                 const duration = interaction.options.getInteger("appeal") ?? -1;
                 const deleteMessageSeconds = interaction.options.getInteger("delete_messages") ?? undefined;
 
-                callback = async() => await member.ban({ reason, deleteMessageSeconds });
+                callback = async() => await guild.bans.create(user, { deleteMessageSeconds });
 
                 caseData = await prisma.case.create({
                     data: {
                         type: CaseType.BAN,
-                        userId: user.id,
-                        moderatorId: moderator.id,
+                        userId,
+                        moderatorId: interaction.user.id,
                         reason,
                         duration
                     }
@@ -96,23 +114,7 @@ export default new Command({
                 break;
             }
             case "remove": {
-                const id = interaction.options.getString("id", true);
-
-                user = await interaction.client.users.fetch(id);
-                if (!user) {
-                    const embed = new EmbedBuilder()
-                        .setTitle("❌ Unknown user")
-                        .setDescription("Could not find that user.")
-                        .setColor(Colors.Red);
-                    await interaction.followUp({ embeds: [embed] });
-                    return;
-                }
-
-                const guild = interaction.guild;
-                if (!guild) throw new Error("Unknown guild");
-
-                const bans = await guild.bans.fetch();
-                if (!bans.has(id)) {
+                if (!bans.has(userId)) {
                     const embed = new EmbedBuilder()
                         .setTitle("❌ Unable to unban user")
                         .setDescription("User is not banned from this server.")
