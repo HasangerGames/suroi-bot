@@ -3,7 +3,7 @@ import { Skins } from "@suroi/definitions/items/skins";
 import { InputPacket } from "@suroi/packets/inputPacket";
 import { JoinPacket } from "@suroi/packets/joinPacket";
 import { PacketStream } from "@suroi/packets/packetStream";
-import { type APIEmbedField, type ChatInputCommandInteraction, Colors, EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
+import { type ChatInputCommandInteraction, Colors, EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { Command } from "../../utils/command";
 
 export interface Region {
@@ -11,11 +11,6 @@ export interface Region {
      * The human-readable name of the region, displayed in the server selector.
      */
     readonly name: string
-
-    /**
-     * An emoji flag to display alongside the region name.
-     */
-    readonly flag?: string
 
     /**
      * The address of the region's main server.
@@ -38,44 +33,50 @@ export interface Region {
 const regions = {
     na: {
         name: "North America",
-        flag: "🇺🇸 ",
         mainAddress: "https://na.suroi.io",
         gameAddress: "wss://na.suroi.io/game/<gameID>",
         offset: 1
     },
     eu: {
         name: "Europe",
-        flag: "🇩🇪 ",
         mainAddress: "https://eu.suroi.io",
         gameAddress: "wss://eu.suroi.io/game/<gameID>",
         offset: 1
     },
     sa: {
         name: "South America",
-        flag: "🇧🇷 ",
         mainAddress: "https://sa.suroi.io",
         gameAddress: "wss://sa.suroi.io/game/<gameID>",
         offset: 1
     },
     as: {
         name: "Asia",
-        flag: "🇻🇳 ",
         mainAddress: "https://as.suroi.io",
         gameAddress: "wss://as.suroi.io/game/<gameID>",
         offset: 1
     },
     ea: {
         name: "East Asia",
-        flag: "🇭🇰 ",
         mainAddress: "https://ea.suroi.io",
         gameAddress: "wss://ea.suroi.io/game/<gameID>",
         offset: 1
     },
     oc: {
         name: "Oceania",
-        flag: "🇦🇺 ",
         mainAddress: "https://oc.suroi.io",
         gameAddress: "wss://oc.suroi.io/game/<gameID>",
+        offset: 1
+    },
+    naDuel: {
+        name: "North America (1v1)",
+        mainAddress: "https://1v1.suroi.io",
+        gameAddress: "wss://1v1.suroi.io/game/<gameID>",
+        offset: 1
+    },
+    eaDuel: {
+        name: "East Asia (1v1)",
+        mainAddress: "https://ea1v1.suroi.io",
+        gameAddress: "wss://ea1v1.suroi.io/game/<gameID>",
         offset: 1
     }
 } as Record<string, Region>;
