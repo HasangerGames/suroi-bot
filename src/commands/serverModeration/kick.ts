@@ -21,6 +21,8 @@ export default new Command({
     cooldown: 0,
     deferred: true,
     async execute(interaction: ChatInputCommandInteraction) {
+        await interaction.deferReply();
+
         const data = await modActionPreCheck(interaction, "kick", "kickable");
         if (!data) return;
 

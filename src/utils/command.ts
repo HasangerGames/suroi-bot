@@ -34,10 +34,6 @@ export class Command {
         }
         this.lastRun = now;
 
-        if (this.deferred) {
-            await interaction.deferReply();
-        }
-
         try {
             await this._execute(interaction);
         } catch (e) {

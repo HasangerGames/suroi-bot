@@ -1,7 +1,7 @@
 import { createReadStream } from "node:fs";
 import { exists, mkdir } from "node:fs/promises";
 import { type AudioPlayerState, AudioPlayerStatus, createAudioPlayer, createAudioResource, joinVoiceChannel, NoSubscriberBehavior, StreamType, type VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
-import { ActionRowBuilder, type APIEmbedField, ButtonBuilder, type ButtonInteraction, ButtonStyle, type ChatInputCommandInteraction, Colors, ComponentType, EmbedBuilder, type GuildMember, type MessageActionRowComponentBuilder, SlashCommandBuilder, type TextChannel, type VoiceBasedChannel } from "discord.js";
+import { ActionRowBuilder, type APIEmbedField, ButtonBuilder, type ButtonInteraction, ButtonStyle, type ChatInputCommandInteraction, Colors, ComponentType, EmbedBuilder, type GuildMember, type MessageActionRowComponentBuilder, MessageFlags, SlashCommandBuilder, type TextChannel, type VoiceBasedChannel } from "discord.js";
 import YouTube, { type Video } from "youtube-sr";
 import { Command } from "../../utils/command";
 import { simpleEmbed, simpleEmbedFollowUp } from "../../utils/embed";
@@ -232,15 +232,16 @@ export default new Command({
     async execute(interaction: ChatInputCommandInteraction) {
         const channel = (interaction.member as GuildMember)?.voice.channel;
         if (!channel) {
-            await simpleEmbedFollowUp(
-                interaction,
+            const embed = simpleEmbed(
                 "❌ Can't use command",
                 "You must be connected to a voice channel to use this command.",
-                Colors.Red,
-                true
+                Colors.Red
             );
+            await interaction.reply({ embeds: [embed], flags: [MessageFlags.Ephemeral] });
             return;
         }
+
+        await interaction.deferReply();
 
         SongManager.lastChannel = interaction.channel as TextChannel ?? undefined;
 
@@ -319,6 +320,7 @@ export default new Command({
             // TODO show error when song can't be skipped
             // TODO show current song in pause/unpause/skip embeds
             // TODO search embed for no results
+            // TODO keep track of most played songs, make leaderboard
             case "play": {
                 const query = interaction.options.getString("query", true);
                 const video = (await YouTube.search(query, { type: "video", limit: 1 }))[0];

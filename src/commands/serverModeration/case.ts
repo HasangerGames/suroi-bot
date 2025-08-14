@@ -40,6 +40,8 @@ export default new Command({
     cooldown: 5000,
     deferred: true,
     async execute(interaction: ChatInputCommandInteraction) {
+        await interaction.deferReply();
+
         const subcommand = interaction.options.getSubcommand() as "list" | "info" | "delete";
         switch (subcommand) {
             case "list": {

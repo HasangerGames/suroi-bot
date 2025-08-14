@@ -65,6 +65,8 @@ export default new Command({
     cooldown: 0,
     deferred: true,
     async execute(interaction: ChatInputCommandInteraction) {
+        await interaction.deferReply();
+
         let user: User;
         const reason = interaction.options.getString("reason", true);
         let caseData: CaseData;
