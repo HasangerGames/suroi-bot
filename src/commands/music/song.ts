@@ -67,14 +67,14 @@ class SongManagerClass {
         this.connection?.destroy();
     }
 
-    async addToQueue(video: Video): Promise<void> {
+    addToQueue(video: Video): void {
         this.queue.push(video);
         if (this.queue.length === 1) {
             this._play(video, false);
         }
     }
 
-    async removeFromQueue(index: number): Promise<void> {
+    removeFromQueue(index: number): void {
         if (index === 0) {
             this.skip();
             return;
@@ -277,8 +277,11 @@ export default new Command({
                     embeds: [embed],
                     components: [row]
                 });
-                const collector = message.createMessageComponentCollector({ componentType: ComponentType.Button, time: 120000 });
-                let madeSelection = false;
+                const collector = message.createMessageComponentCollector({
+                    componentType: ComponentType.Button,
+                    max: 1,
+                    time: 120000
+                });
 
                 const disableButtons = async() => {
                     row.components.forEach(btn => btn.setDisabled(true));
@@ -286,9 +289,6 @@ export default new Command({
                 };
 
                 collector.on("collect", async(i: ButtonInteraction) => {
-                    if (madeSelection) return;
-                    madeSelection = true;
-
                     await disableButtons();
 
                     const selection = videos[parseInt(i.customId)];
@@ -298,7 +298,7 @@ export default new Command({
                             null,
                             Colors.Red
                         );
-                        i.reply({ embeds: [embed] });
+                        await i.reply({ embeds: [embed] });
                         return;
                     }
 
@@ -306,7 +306,7 @@ export default new Command({
                     SongManager.addToQueue(selection);
 
                     const embed = SongManager.makeNowPlayingEmbed(selection, "Added to Queue", Colors.DarkGreen);
-                    i.reply({ embeds: [embed] });
+                    await i.reply({ embeds: [embed] });
                 });
 
                 collector.on("end", disableButtons);

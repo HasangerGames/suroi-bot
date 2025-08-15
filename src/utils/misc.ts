@@ -147,7 +147,7 @@ export async function logModAction(
                     iconURL: moderator.displayAvatarURL() ?? undefined
                 })
                 .setTitle(`${emoji} You have been ${caseWasAdded ? userAddedText : userRemovedText} **Suroi**`)
-                .setDescription(caseWasAdded ? `**Case #${caseId}**` : "")
+                .setDescription(caseWasAdded ? `**Case #${caseId}**` : null)
                 .addFields(embedFields)
                 .setColor(embedColor)
                 .setTimestamp();
@@ -199,7 +199,7 @@ export async function modActionPreCheck(
         const embed = new EmbedBuilder()
             .setAuthor({
                 name: member.user.username,
-                iconURL: member.user.avatarURL() ?? undefined
+                iconURL: member.user.displayAvatarURL() ?? undefined
             })
             .setDescription(`### ❌ Unable to ${actionType} <@${member.id}>\nThis user is immune to this action`)
             .setColor(Colors.Red);
@@ -214,12 +214,48 @@ export async function modActionPreCheck(
     };
 }
 
-export async function logRemovedAttachments(removedAttachments: Attachment[], message: Message | PartialMessage, logChannel: TextChannel, messageLink?: string) {
+export async function logDeletedMessage(message: Message, logChannel: TextChannel) {
+    if (message.content) {
+        const author = message.author;
+
+        const embed = new EmbedBuilder()
+            .setAuthor({
+                name: author.username,
+                iconURL: author.displayAvatarURL()
+            })
+            .setDescription(
+                `### 🗑️ Message by <@${author.id}> deleted in <#${message.channelId}>\n` +
+                // For messages with links, we avoid using the diff view because it prevents them from resolving
+                (linkRegex.test(message.content)
+                    // embed descriptions have a maximum length of 4096 chars, so we truncate it here to leave room for the rest of the description
+                    ? truncateString(message.content, 3896)
+                    : (
+                        `\`\`\`diff\n` +
+                        truncateString(`- ${message.content.replaceAll("\n", "\n- ")}\n`, 3896) +
+                        `\`\`\``
+                    )
+                )
+            )
+            .setColor(Colors.Red)
+            .setFooter({ text: `User ID: ${author.id}` })
+            .setTimestamp();
+        await logChannel.send({ embeds: [embed] });
+
+        const gifMatches = message.content?.matchAll(/https:\/\/(tenor.com\/view\/[^\s]*|[^\s]*\.gif)/g) ?? [];
+        for (const [content] of gifMatches) {
+            await logChannel.send({ content });
+        }
+    }
+
+    const attachments = message.attachments.values().toArray();
+    if (attachments.length) {
+        await logRemovedAttachments(attachments, message, logChannel);
+    }
+}
+
+export async function logRemovedAttachments(files: Attachment[], message: Message | PartialMessage, logChannel: TextChannel, messageLink?: string) {
     const author = message.author;
     if (!author) return;
-
-    const hasSingleImage = removedAttachments.length === 1 && removedAttachments[0]?.contentType?.startsWith("image/");
-    const files = hasSingleImage ? undefined : removedAttachments;
 
     const embed = new EmbedBuilder()
         .setAuthor({
@@ -227,13 +263,12 @@ export async function logRemovedAttachments(removedAttachments: Attachment[], me
             iconURL: author.displayAvatarURL()
         })
         .setDescription(
-            `### **🗑️ ${removedAttachments.length === 1 ? "Attachment" : "Attachments"} by <@${author.id}> removed in <#${message.channelId}>**\n` +
+            `### 🗑️ ${files.length === 1 ? "Attachment" : `${files.length} attachments`} by <@${author.id}> removed in <#${message.channelId}>\n` +
             (messageLink ?? "") +
             `\`\`\`diff\n` +
-            `- 📎${removedAttachments.map(({ name }) => name).join("\n- 📎")}\n` +
+            `- 📎${files.map(({ name }) => name).join("\n- 📎")}\n` +
             `\`\`\``
         )
-        .setImage(hasSingleImage ? removedAttachments[0]?.url ?? null : null)
         .setColor(Colors.Red)
         .setFooter({ text: `User ID: ${author.id}` })
         .setTimestamp();
