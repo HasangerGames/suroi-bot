@@ -25,8 +25,12 @@
             "description": "The ID of the channel to send moderation logs to.",
             "type": "string"
         },
-        "auditLogChannelId": {
-            "description": "The ID of the channel to send audit logs to.",
+        "levelingChannelId": {
+            "description": "The ID of the channel to send leveling up messages in.",
+            "type": "string"
+        },
+        "countingChannelId": {
+            "description": "The ID of the channel for the counting activity.",
             "type": "string"
         }
     },
@@ -38,7 +42,8 @@
         "roles",
         "moderatorRoleId",
         "moderationLogChannelId",
-        "auditLogChannelId"
+        "levelingChannelId",
+        "countingChannelId"
     ],
     "additionalProperties": false
 }

@@ -1,6 +1,7 @@
 import { Colors, EmbedBuilder, Events, PermissionFlagsBits } from "discord.js";
+import { Config } from "../../utils/config";
 import { EventHandler } from "../../utils/eventHandler";
-import { getModLogChannel, linkRegex, logRemovedAttachments, truncateString } from "../../utils/misc";
+import { createMessageLink, getModLogChannel, linkRegex, logRemovedAttachments, truncateString } from "../../utils/misc";
 
 export default new EventHandler(Events.MessageUpdate, async(oldMessage, newMessage) => {
     const author = newMessage.author;
@@ -8,7 +9,7 @@ export default new EventHandler(Events.MessageUpdate, async(oldMessage, newMessa
 
     const guild = newMessage.guild;
     const logChannel = await getModLogChannel(guild);
-    const messageLink = `[Jump to message](https://discord.com/channels/${newMessage.guildId}/${newMessage.channelId}/${newMessage.id})\n`;
+    const messageLink = `${createMessageLink(newMessage)}\n`;
 
     const oldAttachments = oldMessage.attachments;
     const newAttachments = newMessage.attachments;
@@ -28,6 +29,11 @@ export default new EventHandler(Events.MessageUpdate, async(oldMessage, newMessa
     // Block editing links for users that don't have the Manage Messages permission
     const member = await guild?.members.fetch(author);
     if (/https?:\/\//.test(newContent) && !member?.permissions.has(PermissionFlagsBits.ManageMessages)) {
+        await newMessage.delete();
+        return;
+    }
+
+    if (newMessage.channelId === Config.countingChannelId) {
         await newMessage.delete();
         return;
     }

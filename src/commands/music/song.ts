@@ -5,6 +5,7 @@ import { ActionRowBuilder, type APIEmbedField, ButtonBuilder, type ButtonInterac
 import YouTube, { type Video } from "youtube-sr";
 import { Command } from "../../utils/command";
 import { simpleEmbed, simpleEmbedFollowUp } from "../../utils/embed";
+import { standardNumberFormat } from "../../utils/misc";
 
 enum QueueStatus {
     Downloading,
@@ -117,7 +118,7 @@ class SongManagerClass {
             .setFields(
                 { name: " ", value: title },
                 { name: "Duration", value: `\`${video.durationFormatted}\``, inline: true },
-                { name: "Views", value: `\`${numberFormat.format(video.views)}\``, inline: true },
+                { name: "Views", value: `\`${standardNumberFormat.format(video.views)}\``, inline: true },
                 { name: "Uploaded", value: `\`${video.uploadedAt}\``, inline: true }
             )
             .setColor(color);
@@ -169,7 +170,6 @@ class SongManagerClass {
 
 export const SongManager = new SongManagerClass();
 
-const numberFormat = Intl.NumberFormat("en", { notation: "standard" });
 const selectionEmojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"];
 
 export default new Command({
@@ -257,7 +257,7 @@ export default new Command({
                             { name: " ", value: `${selectionEmojis[i]} [**${video.title ?? "No Title"}**](${video.url})` },
                             { name: " ", value: `[${video.channel?.name ?? "No Channel"}](${video.channel?.url})` },
                             { name: "Duration", value: `\`${video.durationFormatted}\``, inline: true },
-                            { name: "Views", value: `\`${numberFormat.format(video.views)}\``, inline: true },
+                            { name: "Views", value: `\`${standardNumberFormat.format(video.views)}\``, inline: true },
                             { name: "Uploaded", value: `\`${video.uploadedAt}\``, inline: true }
                         ])
                     )

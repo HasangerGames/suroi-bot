@@ -31,7 +31,11 @@ export interface ConfigSchema {
    */
   moderationLogChannelId: string;
   /**
-   * The ID of the channel to send audit logs to.
+   * The ID of the channel to send leveling up messages in.
    */
-  auditLogChannelId: string;
+  levelingChannelId: string;
+  /**
+   * The ID of the channel for the counting activity.
+   */
+  countingChannelId: string;
 }

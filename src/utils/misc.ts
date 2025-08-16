@@ -1,5 +1,5 @@
 import { CaseType, PrismaClient } from "@prisma/client";
-import { type APIEmbedField, type Attachment, ChannelType, type ChatInputCommandInteraction, Colors, EmbedBuilder, type Guild, GuildMember, type Message, type PartialMessage, type TextChannel, type User } from "discord.js";
+import { type APIEmbedField, type Attachment, ChannelType, ChatInputCommandInteraction, Colors, EmbedBuilder, type Guild, GuildMember, type Message, type PartialMessage, type TextChannel, type User } from "discord.js";
 import { Config } from "./config";
 
 export const prisma = new PrismaClient();
@@ -12,6 +12,10 @@ export function pickRandomInArray<T>(array: T[]): T {
 export const linkRegex = /<(@|@&|#|:[^\s]*:)\d+>|<t:\d+:[FfDdTtR]>|https?:\/\//;
 
 export const truncateString = (content: string, maxLength: number): string => content.length > maxLength ? `${content.slice(0, maxLength - 1)}…` : content;
+
+export const standardNumberFormat = Intl.NumberFormat("en", { notation: "standard" });
+
+export const leaderboardMedal = (i: number): string => ["🥇", "🥈", "🥉"][i] ?? "🏅";
 
 export const caseDurationToString: Record<number, string> = {
     "60000": "1 minute",
@@ -105,7 +109,7 @@ export interface CaseData {
 }
 
 export async function logModAction(
-    interaction: ChatInputCommandInteraction,
+    interactionOrGuild: ChatInputCommandInteraction | Guild | null,
     user: User,
     moderator: User,
     { type, id: caseId, reason, duration }: CaseData,
@@ -173,9 +177,16 @@ export async function logModAction(
         .setColor(embedColor)
         .setFooter({ text: `User ID: ${user.id}` })
         .setTimestamp();
-    await interaction.followUp({ embeds: [modEmbed] });
 
-    const logChannel = await getModLogChannel(interaction.guild);
+    let guild: Guild | null;
+    if (interactionOrGuild instanceof ChatInputCommandInteraction) {
+        await interactionOrGuild.followUp({ embeds: [modEmbed] });
+        guild = interactionOrGuild.guild;
+    } else {
+        guild = interactionOrGuild;
+    }
+
+    const logChannel = await getModLogChannel(guild);
     await logChannel.send({ embeds: [modEmbed] });
 }
 
@@ -284,8 +295,12 @@ export async function getModLogChannel(guild: Guild | null): Promise<TextChannel
 
 export async function getTextChannelById(guild: Guild | null, id: string): Promise<TextChannel> {
     if (!guild) throw new Error("Guild not found");
-    const logChannel = await guild.channels.fetch(id);
-    if (!logChannel) throw new Error("Moderation log channel not found");
-    if (logChannel.type !== ChannelType.GuildText) throw new Error("Moderation log channel is not a text channel");
-    return logChannel;
+    const channel = await guild.channels.fetch(id);
+    if (!channel) throw new Error("Required channel not found");
+    if (channel.type !== ChannelType.GuildText) throw new Error("Required channel is not a text channel");
+    return channel;
+}
+
+export function createMessageLink(message?: Message, text = "Jump to message") {
+    return `[${text}](https://discord.com/channels/${message?.guildId}/${message?.channelId}/${message?.id})`;
 }

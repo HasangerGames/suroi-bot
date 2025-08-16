@@ -48,7 +48,7 @@ export default new Command({
                 const user = interaction.options.getUser("user");
                 if (!user) {
                     const embed = new EmbedBuilder()
-                        .setTitle(`❌ Unknown user`)
+                        .setTitle("❌ Unknown user")
                         .setDescription("Could not find that user.")
                         .setColor(Colors.Red);
                     await interaction.followUp({ embeds: [embed] });

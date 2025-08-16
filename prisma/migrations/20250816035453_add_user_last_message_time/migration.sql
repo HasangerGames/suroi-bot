@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "public"."User" ADD COLUMN     "lastMessageTime" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

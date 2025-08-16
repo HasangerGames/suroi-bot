@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, type ButtonInteraction, ButtonStyle, type ChatInputCommandInteraction, Colors, ComponentType, EmbedBuilder, type GuildTextBasedChannel, type MessageActionRowComponentBuilder, MessageFlags, PermissionsBitField, SlashCommandBuilder } from "discord.js";
 import { Command } from "../../utils/command";
 import { Config } from "../../utils/config";
-import { getModLogChannel, logDeletedMessage } from "../../utils/misc";
+import { createMessageLink, getModLogChannel, logDeletedMessage } from "../../utils/misc";
 
 export default new Command({
     data: new SlashCommandBuilder()
@@ -13,6 +13,10 @@ export default new Command({
             .setRequired(true)
             .setMinValue(1)
             .setMaxValue(100)
+        )
+        .addBooleanOption(option => option
+            .setName("log")
+            .setDescription("Whether to log the deleted messages (defaults to True)")
         )
         .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageMessages),
     cooldown: 30000,
@@ -31,7 +35,7 @@ export default new Command({
         const embed = new EmbedBuilder()
             .setDescription(
                 `### 🗑️ Confirm purge of ${messageCount} from <#${interaction.channelId}>\n` +
-                `[Jump to first message](https://discord.com/channels/${firstMessage?.guildId}/${firstMessage?.channelId}/${firstMessage?.id})\n` +
+                `${createMessageLink(firstMessage, "Jump to first message")}\n` +
                 `Are you sure you want to **permanently delete** the last ${messageCount} from this channel?\n` +
                 `**WARNING: THIS ACTION CANNOT BE UNDONE!**`
             )
@@ -79,7 +83,8 @@ export default new Command({
                 const logChannel = await getModLogChannel(interaction.guild);
 
                 if (
-                    interaction.channelId !== Config.moderationLogChannelId // allows purging mod logs without the deleted messages being logged
+                    (interaction.options.getBoolean("log") ?? true)
+                    && interaction.channelId !== Config.moderationLogChannelId // allows purging mod logs without the deleted messages being logged
                     && messages.size > 1 // deleting a single message emits a messageDelete event, so no need to log separately here
                 ) {
                     for (const [, message] of messages) {
