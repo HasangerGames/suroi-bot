@@ -86,8 +86,8 @@ export default new EventHandler(Events.MessageCreate, async message => {
                     .setDescription(`<@${userId}> just reached level **${newLevel}**!`)
                     .addFields(
                         { name: "Rank", value: `#${rank}`, inline: true },
-                        { name: "XP", value: `${relativeXp} / ${xpForNextLevel}`, inline: true },
                         { name: "Total XP", value: newXp.toString(), inline: true },
+                        { name: "XP to Next Level", value: (xpForNextLevel - relativeXp).toString(), inline: true },
                         { name: " ", value: "-# You can disable these notifications using the \`/levelnotifs off\` command." }
                     )
                     .setColor(Colors.Fuchsia)
