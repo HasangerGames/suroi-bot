@@ -1,7 +1,7 @@
 import { createReadStream } from "node:fs";
 import { exists, mkdir } from "node:fs/promises";
 import { type AudioPlayerState, AudioPlayerStatus, createAudioPlayer, createAudioResource, joinVoiceChannel, NoSubscriberBehavior, StreamType, type VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
-import { ActionRowBuilder, type APIEmbedField, ButtonBuilder, type ButtonInteraction, ButtonStyle, type ChatInputCommandInteraction, Colors, ComponentType, EmbedBuilder, type GuildMember, type MessageActionRowComponentBuilder, MessageFlags, SlashCommandBuilder, type TextChannel, type VoiceBasedChannel } from "discord.js";
+import { ActionRowBuilder, type APIEmbedField, ButtonBuilder, type ButtonInteraction, ButtonStyle, type ChatInputCommandInteraction, Colors, ComponentType, EmbedBuilder, GuildMember, type MessageActionRowComponentBuilder, MessageFlags, SlashCommandBuilder, type TextChannel, type VoiceBasedChannel } from "discord.js";
 import YouTube, { type Video } from "youtube-sr";
 import { Command } from "../../utils/command";
 import { simpleEmbed, simpleEmbedFollowUp } from "../../utils/embed";
@@ -13,6 +13,11 @@ enum QueueStatus {
     Idle
 }
 
+interface QueueVideo extends Video {
+    addedBy?: GuildMember
+    addedAt?: Date
+}
+
 class SongManagerClass {
     private readonly _player = createAudioPlayer({
         behaviors: { noSubscriber: NoSubscriberBehavior.Pause }
@@ -22,8 +27,8 @@ class SongManagerClass {
 
     lastChannel?: TextChannel;
 
-    queue: Array<Video> = [];
-    get currentSong(): Video | undefined { return this.queue[0]; }
+    queue: Array<QueueVideo> = [];
+    get currentSong(): QueueVideo | undefined { return this.queue[0]; }
 
     currentDownload?: Bun.Subprocess;
 
@@ -53,7 +58,10 @@ class SongManagerClass {
         });
 
         this.connection.on("stateChange", (_, newState) => {
-            if (newState.status !== VoiceConnectionStatus.Disconnected) return;
+            if (
+                newState.status !== VoiceConnectionStatus.Disconnected
+                && newState.status !== VoiceConnectionStatus.Destroyed
+            ) return;
 
             this.currentDownload?.kill();
             this.connection = undefined;
@@ -65,10 +73,11 @@ class SongManagerClass {
     }
 
     disconnect(): void {
+        if (this.connection?.state.status === VoiceConnectionStatus.Destroyed) return;
         this.connection?.destroy();
     }
 
-    addToQueue(video: Video): void {
+    addToQueue(video: QueueVideo): void {
         this.queue.push(video);
         if (this.queue.length === 1) {
             this._play(video, false);
@@ -95,17 +104,26 @@ class SongManagerClass {
         this._status = QueueStatus.Playing;
     }
 
-    skip(): void {
+    skip(): QueueVideo | undefined {
         if (this._status === QueueStatus.Downloading) return;
-        this.queue.shift();
+        const video = this.queue.shift();
         this._player.stop();
         this._status = QueueStatus.Idle;
         if (this.queue.length) {
             this._play(this.currentSong);
         }
+        return video;
     }
 
-    makeNowPlayingEmbed(video: Video, title: string, color: number): EmbedBuilder {
+    makeNowPlayingEmbed(video: QueueVideo | undefined, title: string, color: number, hideExtraInfo?: boolean): EmbedBuilder {
+        if (!video) {
+            return simpleEmbed(
+                "Not playing anything",
+                "Use the \`/song play\` command to queue up a song!",
+                Colors.Blue
+            );
+        }
+
         return new EmbedBuilder()
             .setAuthor({
                 iconURL: video.channel?.iconURL(),
@@ -117,10 +135,14 @@ class SongManagerClass {
             .setThumbnail(video.thumbnail?.displayThumbnailURL() ?? null)
             .setFields(
                 { name: " ", value: title },
-                { name: "Duration", value: `\`${video.durationFormatted}\``, inline: true },
-                { name: "Views", value: `\`${standardNumberFormat.format(video.views)}\``, inline: true },
-                { name: "Uploaded", value: `\`${video.uploadedAt}\``, inline: true }
+                ...(hideExtraInfo ? [] : [
+                    { name: "Duration", value: `\`${video.durationFormatted}\``, inline: true },
+                    { name: "Views", value: `\`${standardNumberFormat.format(video.views)}\``, inline: true }
+                ]),
+                ...(video.uploadedAt === null ? [] : [{ name: "Uploaded", value: `\`${video.uploadedAt}\``, inline: true }])
             )
+            .setFooter(video.addedBy ? { iconURL: video.addedBy.displayAvatarURL(), text: `Added by ${video.addedBy.nickname ?? video.addedBy.displayName}` } : null)
+            .setTimestamp(video.addedAt ?? null)
             .setColor(color);
     }
 
@@ -156,7 +178,7 @@ class SongManagerClass {
         this._status = QueueStatus.Playing;
         if (sendNowPlayingMessage) {
             await this.lastChannel?.send({
-                embeds: [this.makeNowPlayingEmbed(video, "Now Playing", Colors.Blue)]
+                embeds: [this.makeNowPlayingEmbed(video, "▶️ Now Playing", Colors.Blue)]
             });
         }
 
@@ -230,7 +252,10 @@ export default new Command({
     cooldown: 5000,
     deferred: true,
     async execute(interaction: ChatInputCommandInteraction) {
-        const channel = (interaction.member as GuildMember)?.voice.channel;
+        const member = interaction.member;
+        if (!(member instanceof GuildMember)) throw new Error("Invalid member");
+
+        const channel = member.voice.channel;
         if (!channel) {
             const embed = simpleEmbed(
                 "❌ Can't use command",
@@ -258,7 +283,7 @@ export default new Command({
                             { name: " ", value: `[${video.channel?.name ?? "No Channel"}](${video.channel?.url})` },
                             { name: "Duration", value: `\`${video.durationFormatted}\``, inline: true },
                             { name: "Views", value: `\`${standardNumberFormat.format(video.views)}\``, inline: true },
-                            { name: "Uploaded", value: `\`${video.uploadedAt}\``, inline: true }
+                            ...(video.uploadedAt === null ? [] : [{ name: "Uploaded", value: `\`${video.uploadedAt}\``, inline: true }])
                         ])
                     )
                     .setThumbnail(videos[0]?.thumbnail?.displayThumbnailURL() ?? null)
@@ -291,7 +316,7 @@ export default new Command({
                 collector.on("collect", async(i: ButtonInteraction) => {
                     await disableButtons();
 
-                    const selection = videos[parseInt(i.customId)];
+                    const selection: QueueVideo | undefined = videos[parseInt(i.customId)];
                     if (!selection) {
                         const embed = simpleEmbed(
                             "❌ Unable to make selection",
@@ -301,11 +326,13 @@ export default new Command({
                         await i.reply({ embeds: [embed] });
                         return;
                     }
+                    selection.addedBy = member;
+                    selection.addedAt = new Date();
 
                     SongManager.connect(channel);
                     SongManager.addToQueue(selection);
 
-                    const embed = SongManager.makeNowPlayingEmbed(selection, "Added to Queue", Colors.DarkGreen);
+                    const embed = SongManager.makeNowPlayingEmbed(selection, SongManager.queue.length === 1 ? "▶️ Now Playing" : "↪️ Added to Queue", Colors.DarkGreen);
                     await i.reply({ embeds: [embed] });
                 });
 
@@ -315,15 +342,11 @@ export default new Command({
             // TODO Make this method accept YT URLs
             // TODO Allow inserting songs at any position in the queue
             // TODO upload date can be null, hide uploaded field when this happens
-            // TODO listen for disconnect event, reset everything
-            // TODO show who added what song in footer
-            // TODO show error when song can't be skipped
-            // TODO show current song in pause/unpause/skip embeds
             // TODO search embed for no results
             // TODO keep track of most played songs, make leaderboard
             case "play": {
                 const query = interaction.options.getString("query", true);
-                const video = (await YouTube.search(query, { type: "video", limit: 1 }))[0];
+                const video: QueueVideo | undefined = (await YouTube.search(query, { type: "video", limit: 1 }))[0];
                 if (!video) {
                     await simpleEmbedFollowUp(
                         interaction,
@@ -333,11 +356,13 @@ export default new Command({
                     );
                     return;
                 }
+                video.addedBy = member;
+                video.addedAt = new Date();
 
                 SongManager.connect(channel);
                 SongManager.addToQueue(video);
 
-                const embed = SongManager.makeNowPlayingEmbed(video, "Added to Queue", Colors.DarkGreen);
+                const embed = SongManager.makeNowPlayingEmbed(video, SongManager.queue.length === 1 ? "▶️ Now Playing" : "↪️ Added to Queue", Colors.DarkGreen);
                 await interaction.followUp({ embeds: [embed] });
                 break;
             }
@@ -373,52 +398,32 @@ export default new Command({
                 break;
             }
             case "nowplaying": {
-                const currentSong = SongManager.currentSong;
-                const embed = currentSong
-                    ? SongManager.makeNowPlayingEmbed(currentSong, "Now Playing", Colors.Blue)
-                    : simpleEmbed(
-                        "Not playing anything",
-                        "Use the /song play command to queue up a song!",
-                        Colors.Blue
-                    );
+                const embed = SongManager.makeNowPlayingEmbed(SongManager.currentSong, "▶️ Now Playing", Colors.Blue);
                 await interaction.followUp({ embeds: [embed] });
                 break;
             }
-            // TODO add a method to SongManager to create an embed with the current song and a custom title
-            // TODO Make pause(), unpause(), and skip() return boolean, indicate
             case "pause": {
                 SongManager.pause();
-                await simpleEmbedFollowUp(
-                    interaction,
-                    "⏸️ Paused current song",
-                    null,
-                    Colors.DarkGreen
-                );
+                const embed = SongManager.makeNowPlayingEmbed(SongManager.currentSong, "⏸️ Paused", Colors.DarkGreen, true);
+                await interaction.followUp({ embeds: [embed] });
                 break;
             }
             case "unpause": {
                 SongManager.unpause();
-                await simpleEmbedFollowUp(
-                    interaction,
-                    "▶️ Unpaused current song",
-                    null,
-                    Colors.DarkGreen
-                );
+                const embed = SongManager.makeNowPlayingEmbed(SongManager.currentSong, "▶️ Now Playing", Colors.DarkGreen, true);
+                await interaction.followUp({ embeds: [embed] });
                 break;
             }
             case "skip": {
+                const embed = SongManager.makeNowPlayingEmbed(SongManager.currentSong, "⏩ Skipped", Colors.DarkGreen, true);
                 SongManager.skip();
-                await simpleEmbedFollowUp(
-                    interaction,
-                    "⏩ Skipped current song",
-                    null,
-                    Colors.DarkGreen
-                );
+                await interaction.followUp({ embeds: [embed] });
                 break;
             }
             case "remove": {
                 const index = interaction.options.getInteger("index", true) - 1;
-                if (!SongManager.queue[index]) {
+                const item = SongManager.queue[index];
+                if (!item) {
                     await simpleEmbedFollowUp(
                         interaction,
                         "❌ That index doesn't exist in the queue",
@@ -428,14 +433,9 @@ export default new Command({
                     return;
                 }
 
+                const embed = SongManager.makeNowPlayingEmbed(item, "✂️ Removed from Queue", Colors.DarkGreen, true);
                 SongManager.removeFromQueue(index);
-
-                await simpleEmbedFollowUp(
-                    interaction,
-                    "✂️ Removed song from queue",
-                    null,
-                    Colors.DarkGreen
-                );
+                await interaction.followUp({ embeds: [embed] });
                 break;
             }
             case "stop": {
