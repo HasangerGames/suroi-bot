@@ -80,7 +80,7 @@ export default new Command({
             if (!emoji) {
                 const embed = new EmbedBuilder()
                     .setTitle("❌ Invalid emoji")
-                    .setDescription(`${emojiVal} is not supported!`)
+                    .setDescription(`${emojiVal} is not supported!\n-# Use the \`/emoji list\` command to show a list of supported emoji.`)
                     .setColor(Colors.Red);
                 await interaction.followUp({ embeds: [embed] });
             }

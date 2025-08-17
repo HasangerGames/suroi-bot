@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "bun --watch src src/index.ts",
     "start": "bun src/index.ts",
-    "genConfigSchema": "json2ts -i config.schema.json -o src/utils/config.d.ts"
+    "genConfigTypes": "json2ts -i config.schema.json -o src/utils/config.d.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.1.3",

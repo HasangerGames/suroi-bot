@@ -39,11 +39,10 @@ export class Command {
         } catch (e) {
             console.error(`An error occurred when trying to execute command /${interaction.commandName}. Details:`);
             console.error(e);
-            const embed = simpleEmbed(
-                "❌ An error occurred when trying to execute this command.",
-                "Ping <@753029976474779760> for details.",
-                Colors.Red
-            );
+            const embed = new EmbedBuilder()
+                .setTitle("❌ An error occurred when trying to execute this command.")
+                .setDescription("Ping <@753029976474779760> for details.")
+                .setColor(Colors.Red);
             await interaction[this.deferred ? "followUp" : "reply"]({ embeds: [embed] });
         }
     }

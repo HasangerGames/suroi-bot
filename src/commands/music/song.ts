@@ -117,11 +117,10 @@ class SongManagerClass {
 
     makeNowPlayingEmbed(video: QueueVideo | undefined, title: string, color: number, hideExtraInfo?: boolean): EmbedBuilder {
         if (!video) {
-            return simpleEmbed(
-                "Not playing anything",
-                "Use the \`/song play\` command to queue up a song!",
-                Colors.Blue
-            );
+            return new EmbedBuilder()
+                .setTitle("Not playing anything")
+                .setDescription("Use the \`/song play\` command to queue up a song!")
+                .setColor(Colors.Blue);
         }
 
         return new EmbedBuilder()
@@ -257,11 +256,10 @@ export default new Command({
 
         const channel = member.voice.channel;
         if (!channel) {
-            const embed = simpleEmbed(
-                "❌ Can't use command",
-                "You must be connected to a voice channel to use this command.",
-                Colors.Red
-            );
+            const embed = new EmbedBuilder()
+                .setTitle("❌ Can't use command")
+                .setDescription("You must be connected to a voice channel to use this command.")
+                .setColor(Colors.Red);
             await interaction.reply({ embeds: [embed], flags: [MessageFlags.Ephemeral] });
             return;
         }
@@ -318,11 +316,9 @@ export default new Command({
 
                     const selection: QueueVideo | undefined = videos[parseInt(i.customId)];
                     if (!selection) {
-                        const embed = simpleEmbed(
-                            "❌ Unable to make selection",
-                            null,
-                            Colors.Red
-                        );
+                        const embed = new EmbedBuilder()
+                            .setTitle("❌ Unable to make selection")
+                            .setColor(Colors.Red);
                         await i.reply({ embeds: [embed] });
                         return;
                     }
@@ -341,19 +337,16 @@ export default new Command({
             }
             // TODO Make this method accept YT URLs
             // TODO Allow inserting songs at any position in the queue
-            // TODO upload date can be null, hide uploaded field when this happens
             // TODO search embed for no results
             // TODO keep track of most played songs, make leaderboard
             case "play": {
                 const query = interaction.options.getString("query", true);
                 const video: QueueVideo | undefined = (await YouTube.search(query, { type: "video", limit: 1 }))[0];
                 if (!video) {
-                    await simpleEmbedFollowUp(
-                        interaction,
-                        `❌ No results for **${query}**`,
-                        null,
-                        Colors.Red
-                    );
+                    const embed = new EmbedBuilder()
+                        .setTitle(`❌ No results for **${query}**`)
+                        .setColor(Colors.Red);
+                    await interaction.followUp({ embeds: [embed] });
                     return;
                 }
                 video.addedBy = member;
@@ -398,24 +391,44 @@ export default new Command({
                 break;
             }
             case "nowplaying": {
-                const embed = SongManager.makeNowPlayingEmbed(SongManager.currentSong, "▶️ Now Playing", Colors.Blue);
+                const embed = SongManager.makeNowPlayingEmbed(
+                    SongManager.currentSong,
+                    "▶️ Now Playing",
+                    Colors.Blue
+                );
                 await interaction.followUp({ embeds: [embed] });
                 break;
             }
             case "pause": {
                 SongManager.pause();
-                const embed = SongManager.makeNowPlayingEmbed(SongManager.currentSong, "⏸️ Paused", Colors.DarkGreen, true);
+                const embed = SongManager.makeNowPlayingEmbed(
+                    SongManager.currentSong,
+                    "⏸️ Paused",
+                    Colors.DarkGreen,
+                    true
+                );
                 await interaction.followUp({ embeds: [embed] });
                 break;
             }
             case "unpause": {
                 SongManager.unpause();
-                const embed = SongManager.makeNowPlayingEmbed(SongManager.currentSong, "▶️ Now Playing", Colors.DarkGreen, true);
+                const embed = SongManager.makeNowPlayingEmbed(
+                    SongManager.currentSong,
+                    "▶️ Now Playing",
+                    Colors.DarkGreen,
+                    true
+                );
                 await interaction.followUp({ embeds: [embed] });
                 break;
             }
+            // TODO Add "Next Up" field or somethin to show the next song
             case "skip": {
-                const embed = SongManager.makeNowPlayingEmbed(SongManager.currentSong, "⏩ Skipped", Colors.DarkGreen, true);
+                const embed = SongManager.makeNowPlayingEmbed(
+                    SongManager.currentSong,
+                    "⏩ Skipped",
+                    Colors.DarkGreen,
+                    true
+                );
                 SongManager.skip();
                 await interaction.followUp({ embeds: [embed] });
                 break;
@@ -424,12 +437,10 @@ export default new Command({
                 const index = interaction.options.getInteger("index", true) - 1;
                 const item = SongManager.queue[index];
                 if (!item) {
-                    await simpleEmbedFollowUp(
-                        interaction,
-                        "❌ That index doesn't exist in the queue",
-                        null,
-                        Colors.Red
-                    );
+                    const embed = new EmbedBuilder()
+                        .setTitle("❌ That index doesn't exist in the queue")
+                        .setColor(Colors.Red);
+                    await interaction.followUp({ embeds: [embed] });
                     return;
                 }
 
@@ -440,12 +451,11 @@ export default new Command({
             }
             case "stop": {
                 SongManager.disconnect();
-                await simpleEmbedFollowUp(
-                    interaction,
-                    "👋 So long!",
-                    "Cleared queue and left voice channel.",
-                    Colors.DarkGreen
-                );
+                const embed = new EmbedBuilder()
+                    .setTitle("👋 So long!")
+                    .setDescription("Cleared queue and left voice channel.")
+                    .setColor(Colors.DarkGreen);
+                await interaction.followUp({ embeds: [embed] });
                 break;
             }
         }
