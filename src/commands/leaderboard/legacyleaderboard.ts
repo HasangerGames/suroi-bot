@@ -10,7 +10,7 @@ export default new Command({
     async execute(interaction: ChatInputCommandInteraction) {
         // yes I copied some of error's code
         // cry about it
-        const presetTopUsers = [
+        const leaderboard = [
             { username: "eiπ", level: 200 },
             { username: "Amyklae", level: 200 },
             { username: "Kenos", level: 200 },
@@ -25,13 +25,13 @@ export default new Command({
 
         let leaderboardText = "";
 
-        for (let i = 0; i < presetTopUsers.length; i++) {
-            const user = presetTopUsers[i];
+        for (let i = 0; i < leaderboard.length; i++) {
+            const user = leaderboard[i];
             if (!user) break;
             leaderboardText += `${i + 1}. ${leaderboardMedal(i)} **${user.username}** - Level **${user.level}**\n`;
         }
 
-        const leaderboardEmbed = new EmbedBuilder()
+        const embed = new EmbedBuilder()
             .setAuthor({
                 iconURL: interaction.guild?.iconURL() ?? undefined,
                 name: "Suroi"
@@ -39,7 +39,6 @@ export default new Command({
             .setTitle("🏆 Legacy Server Leaderboard")
             .setColor(Colors.Blue)
             .setDescription(leaderboardText);
-
-        await interaction.reply({ embeds: [leaderboardEmbed] });
+        await interaction.reply({ embeds: [embed] });
     }
 });

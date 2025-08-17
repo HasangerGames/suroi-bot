@@ -25,6 +25,10 @@
     "youtube-sr": "^4.3.12"
   },
   "trustedDependencies": [
+    "@discordjs/opus",
+    "@prisma/client",
+    "@prisma/engines",
+    "prisma",
     "sodium"
   ]
 }
