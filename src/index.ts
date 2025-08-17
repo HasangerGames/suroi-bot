@@ -28,8 +28,13 @@ console.log("Registering commands...");
 export const commands: Map<string, Command> = new Map();
 const commandGlob = new Glob("commands/**/*.ts");
 for await (const file of commandGlob.scan("src")) {
-    const command: Command = (await import(`./${file}`)).default;
-    commands.set(command.data.name, command);
+    try {
+        const command: Command = (await import(`./${file}`)).default;
+        commands.set(command.data.name, command);
+    } catch (e) {
+        console.error(`Error loading command ${file}. Details:`);
+        console.error(e);
+    }
 }
 
 const rest = new REST().setToken(Config.token);
@@ -41,15 +46,20 @@ await rest.put(
 console.log("Registering events...");
 const eventGlob = new Glob("events/**/*.ts");
 for await (const file of eventGlob.scan("src")) {
-    const { event, listener }: EventHandler<never> = (await import(`./${file}`)).default;
-    client.on(event, async(...args) => {
-        try {
-            await listener(...args);
-        } catch (e) {
-            console.error(`An error occurred when trying to execute event handler '${event}'. Details:`);
-            console.error(e);
-        }
-    });
+    try {
+        const { event, listener }: EventHandler<never> = (await import(`./${file}`)).default;
+        client.on(event, async(...args) => {
+            try {
+                await listener(...args);
+            } catch (e) {
+                console.error(`An error occurred when trying to execute event handler '${event}'. Details:`);
+                console.error(e);
+            }
+        });
+    } catch (e) {
+        console.error(`Error loading event handler ${file}. Details:`);
+        console.error(e);
+    }
 }
 
 client.login(Config.token);
