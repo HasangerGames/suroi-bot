@@ -8,7 +8,6 @@ export default new Command({
         .setName("leaderboard")
         .setDescription("View the server leaderboard"),
     cooldown: 5000,
-    deferred: true,
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply();
 

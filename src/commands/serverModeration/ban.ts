@@ -62,8 +62,7 @@ export default new Command({
             )
         )
         .setDefaultMemberPermissions(PermissionsBitField.Flags.BanMembers),
-    cooldown: 0,
-    deferred: true,
+    cooldown: 5000,
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply();
 

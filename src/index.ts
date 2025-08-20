@@ -1,6 +1,6 @@
 import { Glob } from "bun";
 import { ActivityType, Client, GatewayIntentBits, REST, Routes } from "discord.js";
-import type { Command } from "./utils/command";
+import { type Command, Servers } from "./utils/command";
 import { Config } from "./utils/config";
 import type { EventHandler } from "./utils/eventHandler";
 
@@ -24,26 +24,33 @@ const client = new Client({
     }
 });
 
-console.log("Registering commands...");
+console.log("Loading commands...");
 export const commands: Map<string, Command> = new Map();
+const commandsList: Command[] = [];
 const commandGlob = new Glob("commands/**/*.ts");
 for await (const file of commandGlob.scan("src")) {
     try {
         const command: Command = (await import(`./${file}`)).default;
         commands.set(command.data.name, command);
+        commandsList.push(command);
     } catch (e) {
         console.error(`Error loading command ${file}. Details:`);
         console.error(e);
     }
 }
 
+console.log("Registering commands...");
 const rest = new REST().setToken(Config.token);
 await rest.put(
-    Routes.applicationGuildCommands(Config.clientId, Config.guildId),
-    { body: Array.from(commands.values()).map(({ data }) => data) }
+    Routes.applicationGuildCommands(Config.clientId, Config.mainGuildId),
+    { body: commandsList.filter(({ servers }) => servers.includes(Servers.Main)).map(({ data }) => data) }
+);
+await rest.put(
+    Routes.applicationGuildCommands(Config.clientId, Config.policeGuildId),
+    { body: commandsList.filter(({ servers }) => servers.includes(Servers.Police)).map(({ data }) => data) }
 );
 
-console.log("Registering events...");
+console.log("Loading events...");
 const eventGlob = new Glob("events/**/*.ts");
 for await (const file of eventGlob.scan("src")) {
     try {
@@ -62,4 +69,5 @@ for await (const file of eventGlob.scan("src")) {
     }
 }
 
+console.log("Logging in...");
 client.login(Config.token);

@@ -17,6 +17,8 @@ export const standardNumberFormat = Intl.NumberFormat("en", { notation: "standar
 
 export const leaderboardMedal = (i: number): string => ["🥇", "🥈", "🥉"][i] ?? "🏅";
 
+export const suroiFetch = (route: string, init?: RequestInit): Promise<Response> => fetch(`https://api.suroi.io${route}`, { ...init, headers: { "api-key": Config.suroiApiKey, ...init?.headers } });
+
 export const caseDurationToString: Record<number, string> = {
     "60000": "1 minute",
     "300000": "5 minutes",
@@ -247,6 +249,7 @@ export async function logDeletedMessage(message: Message, logChannel: TextChanne
                     )
                 )
             )
+            .addFields({ name: "Created At", value: `<t:${Math.floor(message.createdTimestamp / 1000)}:F>` })
             .setColor(Colors.Red)
             .setFooter({ text: `User ID: ${author.id}` })
             .setTimestamp();

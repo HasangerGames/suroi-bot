@@ -11,21 +11,29 @@ export interface ConfigSchema {
    */
   $schema: "config.schema.json";
   /**
+   * API key for the Suroi API.
+   */
+  suroiApiKey: string;
+  /**
    * The bot's Discord token.
    */
   token: string;
+  /**
+   * Path to the yt-dlp executable used to download YouTube videos for the /song command.
+   */
+  youtubeDownloaderPath: string;
   /**
    * The bot's Discord client ID.
    */
   clientId: string;
   /**
-   * The ID of the Discord guild the bot is installed to.
+   * The ID of the main Discord guild the bot is installed to.
    */
-  guildId: string;
+  mainGuildId: string;
   /**
-   * The ID of the role with moderator privileges.
+   * The ID of the game modding Discord guild the bot is installed to.
    */
-  moderatorRoleId: string;
+  policeGuildId: string;
   /**
    * The ID of the channel to send moderation logs to.
    */
@@ -38,4 +46,18 @@ export interface ConfigSchema {
    * The ID of the channel for the counting activity.
    */
   countingChannelId: string;
+  /**
+   * The ID of the channel in the police server to send punishment logs to.
+   */
+  gameModLogChannelId: string;
+  /**
+   * Roles that are allowed to perform game mod actions.
+   */
+  gameModRoles: {
+    /**
+     * This interface was referenced by `undefined`'s JSON-Schema definition
+     * via the `patternProperty` ".*".
+     */
+    [k: string]: ("warn" | "temp" | "perma" | "whitelist" | "unban")[];
+  };
 }

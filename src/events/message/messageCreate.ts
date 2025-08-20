@@ -14,12 +14,11 @@ export function toggleReactionSpam(): boolean {
 
 const messageCounts = new Map<Snowflake, number>();
 const xpAwardedUsers = new Set<Snowflake>();
-setInterval(() => {
-    messageCounts.clear();
-    xpAwardedUsers.clear();
-}, 5000);
+let messageCountsLastCleared = 0;
 
 export default new EventHandler(Events.MessageCreate, async message => {
+    if (message.guildId !== Config.mainGuildId) return;
+
     if (reactionSpam) message.react(getRandomEmoji());
 
     if (message.author.bot) return;
@@ -29,6 +28,13 @@ export default new EventHandler(Events.MessageCreate, async message => {
 
     const userId = message.author.id;
     const isCountingChannel = message.channelId === Config.countingChannelId;
+
+    const now = Date.now();
+    if (now - messageCountsLastCleared > 5000) {
+        messageCountsLastCleared = now;
+        messageCounts.clear();
+        xpAwardedUsers.clear();
+    }
 
     const messageCount = (messageCounts.get(userId) ?? 0) + 1;
     messageCounts.set(userId, messageCount);
@@ -114,7 +120,7 @@ export default new EventHandler(Events.MessageCreate, async message => {
             // prevents the same user from sending 2 messages in a row
             || previousMessage.author.id === userId
             // ensures each message contains a number exactly 1 larger than the previous
-            || Number(message.content.replaceAll(".", "")) !== Number(previousMessage.content.replaceAll(".", "")) + 1
+            || Number(message.content) !== Number(previousMessage.content) + 1
         ) {
             await message.delete();
         }

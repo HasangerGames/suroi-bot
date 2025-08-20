@@ -4,7 +4,6 @@ import { type AudioPlayerState, AudioPlayerStatus, createAudioPlayer, createAudi
 import { ActionRowBuilder, type APIEmbedField, ButtonBuilder, type ButtonInteraction, ButtonStyle, type ChatInputCommandInteraction, Colors, ComponentType, EmbedBuilder, GuildMember, type MessageActionRowComponentBuilder, MessageFlags, SlashCommandBuilder, type TextChannel, type VoiceBasedChannel } from "discord.js";
 import YouTube, { type Video } from "youtube-sr";
 import { Command } from "../../utils/command";
-import { simpleEmbed, simpleEmbedFollowUp } from "../../utils/embed";
 import { standardNumberFormat } from "../../utils/misc";
 
 enum QueueStatus {
@@ -136,9 +135,9 @@ class SongManagerClass {
                 { name: " ", value: title },
                 ...(hideExtraInfo ? [] : [
                     { name: "Duration", value: `\`${video.durationFormatted}\``, inline: true },
-                    { name: "Views", value: `\`${standardNumberFormat.format(video.views)}\``, inline: true }
+                    { name: "Views", value: `\`${standardNumberFormat.format(video.views)}\``, inline: true },
+                    ...(video.uploadedAt === null ? [] : [{ name: "Uploaded", value: `\`${video.uploadedAt}\``, inline: true }])
                 ]),
-                ...(video.uploadedAt === null ? [] : [{ name: "Uploaded", value: `\`${video.uploadedAt}\``, inline: true }])
             )
             .setFooter(video.addedBy ? { iconURL: video.addedBy.displayAvatarURL(), text: `Added by ${video.addedBy.nickname ?? video.addedBy.displayName}` } : null)
             .setTimestamp(video.addedAt ?? null)
@@ -249,7 +248,6 @@ export default new Command({
             .setDescription("Clear the queue and leave the voice channel.")
         ),
     cooldown: 5000,
-    deferred: true,
     async execute(interaction: ChatInputCommandInteraction) {
         const member = interaction.member;
         if (!(member instanceof GuildMember)) throw new Error("Invalid member");

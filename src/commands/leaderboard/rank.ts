@@ -40,8 +40,7 @@ export default new Command({
                 { name: "Total XP", value: xp.toString(), inline: true },
                 { name: "XP to Next Level", value: (xpForNextLevel - relativeXp).toString(), inline: true }
             )
-            .setColor(Colors.Blue)
-            .setTimestamp();
+            .setColor(Colors.Blue);
         await interaction.reply({ embeds: [embed] });
     }
 });

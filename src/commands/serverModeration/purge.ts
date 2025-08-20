@@ -20,7 +20,6 @@ export default new Command({
         )
         .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageMessages),
     cooldown: 30000,
-    deferred: true,
     async execute(interaction: ChatInputCommandInteraction) {
         if (!interaction.channel || interaction.channel.isDMBased()) throw new Error("Invalid channel");
 

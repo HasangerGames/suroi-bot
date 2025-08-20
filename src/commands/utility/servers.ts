@@ -4,7 +4,7 @@ import { InputPacket } from "@suroi/packets/inputPacket";
 import { JoinPacket } from "@suroi/packets/joinPacket";
 import { PacketStream } from "@suroi/packets/packetStream";
 import { type ChatInputCommandInteraction, Colors, EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
-import { Command } from "../../utils/command";
+import { Command, Servers } from "../../utils/command";
 
 export interface Region {
     /**
@@ -30,7 +30,7 @@ export interface Region {
     readonly offset: number
 }
 
-const regions = {
+export const regions = {
     na: {
         name: "North America",
         mainAddress: "https://na.suroi.io",
@@ -103,6 +103,7 @@ export default new Command({
         .setName("servers")
         .setDescription("Check the status of the Suroi servers"),
     cooldown: 20000,
+    servers: [Servers.Main, Servers.Police],
     async execute(interaction: ChatInputCommandInteraction) {
         if (loadingServerData) {
             const embed = new EmbedBuilder()
@@ -125,7 +126,11 @@ export default new Command({
             .setColor(Colors.DarkBlue)
             .setTimestamp();
 
+        let statusChanged = true;
         const updateStatus = async(edit = true) => {
+            if (!statusChanged) return;
+            statusChanged = false;
+
             const count = Object.values(serverStatus).reduce<number>(
                 (acc, { status, playerCount }) => {
                     if (!playerCount || status !== ServerStatus.Online) return acc;
@@ -144,8 +149,8 @@ export default new Command({
             );
             await interaction[edit ? "editReply" : "reply"]({ embeds: [embed] });
         };
-
         await updateStatus(false);
+        const statusUpdateInterval = setInterval(updateStatus, 150);
 
         await Promise.allSettled(Object.entries(regions).map(async([regionId, region]) => {
             const status = serverStatus[regionId];
@@ -153,7 +158,7 @@ export default new Command({
 
             status.status = ServerStatus.Connecting;
             status.statusText = "Fetching server data...";
-            await updateStatus();
+            statusChanged = true;
 
             const getApiResponse = async<T>(endpoint: string, errorStatusText: string): Promise<T | undefined> => {
                 try {
@@ -163,17 +168,17 @@ export default new Command({
                     console.error(e);
                     status.status = ServerStatus.Offline;
                     status.statusText = errorStatusText;
-                    await updateStatus();
+                    statusChanged = true;
                     return;
                 }
             };
 
             const serverInfo = await getApiResponse<{ playerCount: number }>("serverInfo", "Error fetching server data");
             if (!serverInfo) return;
-            status.playerCount = serverInfo.playerCount;
 
+            status.playerCount = serverInfo.playerCount;
             status.statusText = "Finding game...";
-            await updateStatus();
+            statusChanged = true;
 
             const gameData = await getApiResponse<{ success: true, gameID: number } | { success: false }>("getGame", "Error fetching game data");
             if (!gameData) return;
@@ -181,11 +186,12 @@ export default new Command({
             if (!gameData.success) {
                 status.status = ServerStatus.Offline;
                 status.statusText = "Error finding game";
+                statusChanged = true;
                 return;
             }
 
             status.statusText = "Connecting to game...";
-            await updateStatus();
+            statusChanged = true;
 
             const socket = new WebSocket(`${region.gameAddress.replace("<gameID>", (gameData.gameID + region.offset).toString())}/play`);
             socket.binaryType = "arraybuffer";
@@ -194,7 +200,7 @@ export default new Command({
                 socket.close();
                 status.status = ServerStatus.Offline;
                 status.statusText = "WebSocket timed out";
-                await updateStatus();
+                statusChanged = true;
             }, 30000);
 
             await new Promise(resolve => {
@@ -210,19 +216,13 @@ export default new Command({
                     });
                     stream.serialize(joinPacket);
 
-                    // makes the bot not despawn (for funsies)
-                    const inputPacket = InputPacket.create({
-                        movement: { up: false, down: false, left: false, right: false },
-                        actions: [{ type: InputActions.Interact }]
-                    });
-                    stream.serialize(inputPacket);
-
                     socket.send(stream.getBuffer().slice(0, stream.stream.index));
                     setTimeout(() => socket.close(), 1000);
 
                     clearTimeout(rejectTimeout);
                     status.status = ServerStatus.Online;
                     status.statusText = `${serverInfo.playerCount} ${serverInfo.playerCount === 1 ? "player" : "players"}`;
+                    statusChanged = true;
                     updateStatus().then(resolve);
                 };
 
@@ -232,11 +232,14 @@ export default new Command({
                     clearTimeout(rejectTimeout);
                     status.status = ServerStatus.Offline;
                     status.statusText = "Error joining game";
+                    statusChanged = true;
                     updateStatus().then(resolve);
                 };
             });
         }));
 
         loadingServerData = false;
+        await updateStatus();
+        clearInterval(statusUpdateInterval);
     }
 });

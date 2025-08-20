@@ -57,7 +57,6 @@ export default new Command({
         )
         .setDefaultMemberPermissions(PermissionsBitField.Flags.ModerateMembers),
     cooldown: 0,
-    deferred: true,
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply();
 

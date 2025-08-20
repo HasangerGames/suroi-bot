@@ -1,9 +1,11 @@
 import { Events } from "discord.js";
+import { Config } from "../../utils/config";
 import { EventHandler } from "../../utils/eventHandler";
 import { getModLogChannel, logDeletedMessage } from "../../utils/misc";
-import { Config } from "../../utils/config";
 
 export default new EventHandler(Events.MessageDelete, async message => {
+    if (message.guildId !== Config.mainGuildId) return;
+
     const author = message.author;
     if (
         !author

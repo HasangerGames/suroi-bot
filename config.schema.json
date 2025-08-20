@@ -5,20 +5,28 @@
             "description": "Reference to this schema.",
             "const": "config.schema.json"
         },
+        "suroiApiKey": {
+            "description": "API key for the Suroi API.",
+            "type": "string"
+        },
         "token": {
             "description": "The bot's Discord token.",
+            "type": "string"
+        },
+        "youtubeDownloaderPath": {
+            "description": "Path to the yt-dlp executable used to download YouTube videos for the /song command.",
             "type": "string"
         },
         "clientId": {
             "description": "The bot's Discord client ID.",
             "type": "string"
         },
-        "guildId": {
-            "description": "The ID of the Discord guild the bot is installed to.",
+        "mainGuildId": {
+            "description": "The ID of the main Discord guild the bot is installed to.",
             "type": "string"
         },
-        "moderatorRoleId": {
-            "description": "The ID of the role with moderator privileges.",
+        "policeGuildId": {
+            "description": "The ID of the game modding Discord guild the bot is installed to.",
             "type": "string"
         },
         "moderationLogChannelId": {
@@ -32,18 +40,37 @@
         "countingChannelId": {
             "description": "The ID of the channel for the counting activity.",
             "type": "string"
+        },
+        "gameModLogChannelId": {
+            "description": "The ID of the channel in the police server to send punishment logs to.",
+            "type": "string"
+        },
+        "gameModRoles": {
+            "description": "Roles that are allowed to perform game mod actions.",
+            "type": "object",
+            "patternProperties": {
+                ".*": {
+                    "type": "array",
+                    "items": {
+                        "enum": ["warn", "temp", "perma", "whitelist", "unban"]
+                    }
+                }
+            }
         }
     },
     "required": [
         "$schema",
+        "suroiApiKey",
         "token",
+        "youtubeDownloaderPath",
         "clientId",
-        "guildId",
-        "roles",
-        "moderatorRoleId",
+        "mainGuildId",
+        "policeGuildId",
         "moderationLogChannelId",
         "levelingChannelId",
-        "countingChannelId"
+        "countingChannelId",
+        "gameModLogChannelId",
+        "gameModRoles"
     ],
     "additionalProperties": false
 }
