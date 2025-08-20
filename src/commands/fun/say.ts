@@ -37,6 +37,7 @@ export default new Command({
         await interaction.deleteReply();
 
         const embed = new EmbedBuilder()
+            .setAuthor({ iconURL: interaction.user.displayAvatarURL(), name: interaction.user.username })
             .setDescription(`### 🗣️ \`/say\` command used in <#${interaction.channelId}> by <@${interaction.user.id}>\n${createMessageLink(message)}\n${content}`)
             .setColor(Colors.DarkVividPink)
             .setTimestamp();

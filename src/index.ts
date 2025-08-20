@@ -1,5 +1,5 @@
 import { Glob } from "bun";
-import { ActivityType, Client, GatewayIntentBits, REST, Routes } from "discord.js";
+import { ActivityType, Client, Events, GatewayIntentBits, Partials, REST, Routes } from "discord.js";
 import { type Command, Servers } from "./utils/command";
 import { Config } from "./utils/config";
 import type { EventHandler } from "./utils/eventHandler";
@@ -13,8 +13,10 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildModeration
+        GatewayIntentBits.GuildModeration,
+        GatewayIntentBits.GuildMessageReactions
     ],
+    partials: [Partials.Message, Partials.Reaction],
     presence: {
         activities: [{
             type: ActivityType.Playing,

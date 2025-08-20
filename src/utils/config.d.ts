@@ -43,6 +43,10 @@ export interface ConfigSchema {
    */
   levelingChannelId: string;
   /**
+   * The ID of the channel to use for the starboard.
+   */
+  starboardChannelId: string;
+  /**
    * The ID of the channel for the counting activity.
    */
   countingChannelId: string;

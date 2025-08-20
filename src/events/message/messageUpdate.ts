@@ -4,7 +4,7 @@ import { EventHandler } from "../../utils/eventHandler";
 import { createMessageLink, getModLogChannel, linkRegex, logRemovedAttachments, truncateString } from "../../utils/misc";
 
 export default new EventHandler(Events.MessageUpdate, async(oldMessage, newMessage) => {
-    if (newMessage.guildId !== Config.mainGuildId) return;
+    if (newMessage.guildId !== Config.mainGuildId || oldMessage.partial || newMessage.partial) return;
 
     const author = newMessage.author;
     if (author.bot) return;
