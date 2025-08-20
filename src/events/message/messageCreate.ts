@@ -1,25 +1,16 @@
 import { CaseType } from "@prisma/client";
 import { Colors, EmbedBuilder, Events, type Snowflake } from "discord.js";
 import { Config } from "../../utils/config";
-import { getRandomEmoji } from "../../utils/emoji";
 import { EventHandler } from "../../utils/eventHandler";
 import { createMessageLink, getModLogChannel, getTextChannelById, logModAction, prisma } from "../../utils/misc";
 import { getLevelForXp, getLevelInfoForXp } from "../../utils/xp";
-
-let reactionSpam = false;
-export function toggleReactionSpam(): boolean {
-    reactionSpam = !reactionSpam;
-    return reactionSpam;
-}
 
 const messageCounts = new Map<Snowflake, number>();
 const xpAwardedUsers = new Set<Snowflake>();
 let messageCountsLastCleared = 0;
 
 export default new EventHandler(Events.MessageCreate, async message => {
-    if (message.guildId !== Config.mainGuildId) return;
-
-    if (reactionSpam) message.react(getRandomEmoji());
+    if (message.guildId !== Config.mainGuildId || message.partial) return;
 
     if (message.author.bot) return;
 

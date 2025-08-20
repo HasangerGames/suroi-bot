@@ -1,5 +1,5 @@
 import { Events } from "discord.js";
-import { SongManager } from "../commands/music/song";
+import { SongManager } from "../commands/fun/song";
 import { Config } from "../utils/config";
 import { EventHandler } from "../utils/eventHandler";
 
