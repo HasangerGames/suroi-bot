@@ -300,11 +300,11 @@ export async function logRemovedAttachments(files: Attachment[], message: Messag
     await logChannel.send({ files });
 }
 
-export async function getModLogChannel(guild: Guild | null): Promise<TextChannel> {
+export async function getModLogChannel(guild: Guild | null | undefined): Promise<TextChannel> {
     return await getTextChannelById(guild, Config.moderationLogChannelId);
 }
 
-export async function getTextChannelById(guild: Guild | null, id: string): Promise<TextChannel> {
+export async function getTextChannelById(guild: Guild | null | undefined, id: string): Promise<TextChannel> {
     if (!guild) throw new Error("Guild not found");
     const channel = await guild.channels.fetch(id);
     if (!channel) throw new Error("Required channel not found");

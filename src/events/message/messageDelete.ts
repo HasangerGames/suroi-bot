@@ -1,7 +1,7 @@
 import { Events } from "discord.js";
 import { Config } from "../../utils/config";
 import { EventHandler } from "../../utils/eventHandler";
-import { getModLogChannel, logDeletedMessage, prisma } from "../../utils/misc";
+import { getModLogChannel, getTextChannelById, logDeletedMessage, prisma } from "../../utils/misc";
 
 export default new EventHandler(Events.MessageDelete, async message => {
     if (message.guildId !== Config.mainGuildId) return;
@@ -22,9 +22,13 @@ export default new EventHandler(Events.MessageDelete, async message => {
         return;
     }
 
+    // if the message is on the starboard, delete it and delete the database entry
     // see comment on try/catch above
     try {
-        await prisma.starboardMessage.delete({ where: { originalMessageId: message.id } });
+        const { starboardMessageId } = await prisma.starboardMessage.delete({ where: { originalMessageId: message.id } });
+        const starboardChannel = await getTextChannelById(message.guild, Config.starboardChannelId);
+        const starboardMessage = await starboardChannel.messages.fetch(starboardMessageId);
+        await starboardMessage.delete();
     } catch {}
 
     const logChannel = await getModLogChannel(message.guild);
