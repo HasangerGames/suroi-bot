@@ -11,7 +11,7 @@ export default new EventHandler(Events.MessageReactionAdd, async reaction => {
 
     const message = reaction.message as Message;
     if (message.partial) await message.fetch();
-    if (message.createdTimestamp < 1755720000) return; // don't add messages from before the starboard was created
+    if (message.createdTimestamp < 1755720000000) return; // don't add messages from before the starboard was created
     const originalMessageId = message.id;
 
     const author = message.author;

@@ -1,6 +1,6 @@
 import { type ChatInputCommandInteraction, Colors, EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { Command } from "../../utils/command";
-import { prisma } from "../../utils/misc";
+import { prisma, standardNumberFormat } from "../../utils/misc";
 import { getLevelInfoForXp, getRank } from "../../utils/xp";
 
 export default new Command({
@@ -36,9 +36,9 @@ export default new Command({
             .addFields(
                 { name: "Rank", value: `#${rank}`, inline: true },
                 { name: "Level", value: level.toString(), inline: true },
-                { name: "XP", value: `${relativeXp} / ${xpForNextLevel}`, inline: true },
-                { name: "Total XP", value: xp.toString(), inline: true },
-                { name: "XP to Next Level", value: (xpForNextLevel - relativeXp).toString(), inline: true }
+                { name: "XP", value: `${standardNumberFormat.format(relativeXp)} / ${standardNumberFormat.format(xpForNextLevel)}`, inline: true },
+                { name: "Total XP", value: standardNumberFormat.format(xp), inline: true },
+                { name: "XP to Next Level", value: standardNumberFormat.format(xpForNextLevel - relativeXp), inline: true }
             )
             .setColor(Colors.Blue);
         await interaction.reply({ embeds: [embed] });

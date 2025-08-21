@@ -1,7 +1,7 @@
 import { CaseType } from "@prisma/client";
-import { AuditLogEvent, Events } from "discord.js";
+import { AuditLogEvent, Colors, EmbedBuilder, Events } from "discord.js";
 import { EventHandler } from "../../utils/eventHandler";
-import { caseDurationToString, logModAction, prisma } from "../../utils/misc";
+import { caseDurationToString, getModLogChannel, logModAction, prisma } from "../../utils/misc";
 
 export default new EventHandler(Events.GuildAuditLogEntryCreate, async(auditLogEntry, guild) => {
     const action = auditLogEntry.action;
@@ -25,9 +25,27 @@ export default new EventHandler(Events.GuildAuditLogEntryCreate, async(auditLogE
                     if (!change) return;
 
                     const { key, old: oldVal, new: newVal } = change;
+
+                    if (key === "nick") {
+                        const embed = new EmbedBuilder()
+                            .setAuthor({ name: user.username, iconURL: user.displayAvatarURL() })
+                            .setTitle("🏷️ Server Nickname Changed")
+                            .setDescription(`${user.displayName} (<@${user.id}>) changed their nickname on the server`)
+                            .addFields(
+                                { name: "Old Nickname", value: `\`${oldVal ?? "[No nickname]"}\`` },
+                                { name: "New Nickname", value: `\`${newVal ?? "[No nickname]"}\`` },
+                                { name: "Changed By", value: `<@${moderator.id}>` }
+                            )
+                            .setFooter({ text: `User ID: ${user.id}` })
+                            .setColor(Colors.Blurple)
+                            .setTimestamp();
+                        const logChannel = await getModLogChannel(guild);
+                        await logChannel.send({ embeds: [embed] });
+                        return;
+                    }
+
                     if (key !== "communication_disabled_until") return;
 
-                    console.log(oldVal, newVal);
                     if (oldVal && !newVal) {
                         duration = undefined;
                     } else if (newVal) {
@@ -46,7 +64,6 @@ export default new EventHandler(Events.GuildAuditLogEntryCreate, async(auditLogE
                     break;
                 }
             }
-            console.log(duration);
 
             const type = {
                 [AuditLogEvent.MemberUpdate]: CaseType.TIMEOUT,
