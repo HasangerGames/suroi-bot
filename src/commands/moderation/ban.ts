@@ -1,7 +1,7 @@
 import { CaseType } from "@prisma/client";
-import { type ChatInputCommandInteraction, Colors, EmbedBuilder, GuildMember, PermissionsBitField, SlashCommandBuilder, type User } from "discord.js";
+import { type ChatInputCommandInteraction, Colors, EmbedBuilder, GuildMember, PermissionsBitField, SlashCommandBuilder } from "discord.js";
 import { Command } from "../../utils/command";
-import { type CaseData, logModAction, prisma } from "../../utils/misc";
+import { logModAction, prisma } from "../../utils/misc";
 
 const appealDurations = [
     { name: "1 month",     value: 2629800000 },
@@ -95,10 +95,11 @@ export default new Command({
         const userId = user.id;
         const bans = await guild.bans.fetch();
         const reason = interaction.options.getString("reason", true);
-        let caseData: CaseData;
+        let duration: number | undefined;
         let callback: (() => Promise<unknown>) | undefined;
 
-        switch (interaction.options.getSubcommand() as "add" | "remove") {
+        const subcommand = interaction.options.getSubcommand() as "add" | "remove";
+        switch (subcommand) {
             case "add": {
                 if (bans.has(userId)) {
                     const embed = new EmbedBuilder()
@@ -109,20 +110,11 @@ export default new Command({
                     return;
                 }
 
-                const duration = interaction.options.getInteger("appeal") ?? -1;
+                duration = interaction.options.getInteger("appeal") ?? -1;
                 const deleteMessageSeconds = interaction.options.getInteger("delete_messages") ?? undefined;
 
                 callback = async() => await guild.bans.create(user, { deleteMessageSeconds });
 
-                caseData = await prisma.case.create({
-                    data: {
-                        type: CaseType.BAN,
-                        userId,
-                        moderatorId: interaction.user.id,
-                        reason,
-                        duration
-                    }
-                });
                 break;
             }
             case "remove": {
@@ -136,8 +128,6 @@ export default new Command({
                 }
 
                 await guild.members.unban(user, reason);
-
-                caseData = { type: CaseType.BAN, reason };
                 break;
             }
         }
@@ -146,7 +136,15 @@ export default new Command({
             interaction,
             user,
             interaction.user,
-            caseData,
+            await prisma.case.create({
+                data: {
+                    type: subcommand === "add" ? CaseType.BAN : CaseType.UNBAN,
+                    userId,
+                    moderatorId: interaction.user.id,
+                    reason,
+                    duration
+                }
+            }),
             callback
         );
     }

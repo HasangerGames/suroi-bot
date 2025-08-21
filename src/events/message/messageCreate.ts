@@ -2,7 +2,7 @@ import { CaseType } from "@prisma/client";
 import { Colors, EmbedBuilder, Events, type Snowflake } from "discord.js";
 import { Config } from "../../utils/config";
 import { EventHandler } from "../../utils/eventHandler";
-import { createMessageLink, getModLogChannel, getTextChannelById, logModAction, prisma } from "../../utils/misc";
+import { createMessageLink, getModLogChannel, getTextChannelById, logModAction, prisma, standardNumberFormat } from "../../utils/misc";
 import { getLevelForXp, getLevelInfoForXp } from "../../utils/xp";
 
 const messageCounts = new Map<Snowflake, number>();
@@ -83,8 +83,8 @@ export default new EventHandler(Events.MessageCreate, async message => {
                     .setDescription(`<@${userId}> just reached level **${newLevel}**!`)
                     .addFields(
                         { name: "Rank", value: `#${rank}`, inline: true },
-                        { name: "Total XP", value: newXp.toString(), inline: true },
-                        { name: "XP to Next Level", value: (xpForNextLevel - relativeXp).toString(), inline: true },
+                        { name: "Total XP", value: standardNumberFormat.format(newXp), inline: true },
+                        { name: "XP to Next Level", value: standardNumberFormat.format(xpForNextLevel - relativeXp), inline: true },
                         { name: " ", value: "-# You can disable these notifications using the \`/levelnotifs off\` command." }
                     )
                     .setColor(Colors.Fuchsia)

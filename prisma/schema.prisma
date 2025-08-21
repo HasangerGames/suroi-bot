@@ -36,4 +36,5 @@ enum CaseType {
   TIMEOUT
   KICK
   BAN
+  UNBAN
 }

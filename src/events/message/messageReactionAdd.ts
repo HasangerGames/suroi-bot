@@ -11,6 +11,7 @@ export default new EventHandler(Events.MessageReactionAdd, async reaction => {
 
     const message = reaction.message as Message;
     if (message.partial) await message.fetch();
+    if (message.createdTimestamp < 1755720000) return; // don't add messages from before the starboard was created
     const originalMessageId = message.id;
 
     const author = message.author;
@@ -22,7 +23,7 @@ export default new EventHandler(Events.MessageReactionAdd, async reaction => {
             iconURL: author.displayAvatarURL(),
             name: author.username ?? ""
         })
-        .setDescription(`### <:lobotomy:1377040017377071215>\`${reaction.count}\`\n${message.content}\n―<@${author.id}>\n${createMessageLink(message)}`)
+        .setDescription(`### <:lobotomy:1377040017377071215> \`${reaction.count}\`\n${message.content}\n―<@${author.id}>\n${createMessageLink(message)}`)
         // biome-ignore lint/style/noNonNullAssertion: length check ensures existence of files[0]
         .setImage(files.length === 1 ? files[0]!.url : null)
         .setColor(0x00ff00)

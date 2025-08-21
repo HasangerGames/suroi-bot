@@ -96,10 +96,15 @@ export const modActionData: Record<CaseType, ModActionData> = {
         expirationText: "Appeal Date",
         expirationFormat: "D",
         userAddedText: "banned from",
-        userRemovedText: "unbanned from",
         modAddedText: "Banned",
-        modRemovedText: "Unbanned",
         addedColor: Colors.Red
+    },
+    UNBAN: {
+        name: "Unban",
+        emoji: "🔨",
+        userAddedText: "unbanned from",
+        modAddedText: "Unbanned",
+        addedColor: Colors.DarkGreen
     }
 };
 
