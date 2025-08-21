@@ -1,6 +1,6 @@
 import { type ChatInputCommandInteraction, Colors, EmbedBuilder, GuildMember, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { Command, Servers } from "../../utils/command";
-import { getTextChannelById, suroiFetch } from "../../utils/misc";
+import { formatDate, formatTimestamp, getTextChannelById, suroiFetch } from "../../utils/misc";
 import { regions } from "./servers";
 import { Config } from "../../utils/config";
 
@@ -33,9 +33,6 @@ const punishmentNames = {
     temp: "temporarily banned",
     perma: "permanently banned"
 };
-
-const formatTimestamp = (timestamp?: string): string => timestamp ? formatDate(new Date(timestamp)) : "Unknown Date";
-const formatDate = (date: Date): string => `<t:${Math.floor(date.getTime() / 1000)}:F>`;
 
 export default new Command({
     data: new SlashCommandBuilder()

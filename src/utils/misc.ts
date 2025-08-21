@@ -15,6 +15,9 @@ export const truncateString = (content: string, maxLength: number): string => co
 
 export const standardNumberFormat = Intl.NumberFormat("en", { notation: "standard" });
 
+export const formatTimestamp = (timestamp?: string): string => timestamp ? formatDate(new Date(timestamp)) : "Unknown Date";
+export const formatDate = (date: Date, style = "F"): string => `<t:${Math.floor(date.getTime() / 1000)}:${style}>`;
+
 export const leaderboardMedal = (i: number): string => ["🥇", "🥈", "🥉"][i] ?? "🏅";
 
 export const suroiFetch = (route: string, init?: RequestInit): Promise<Response> => fetch(`https://api.suroi.io${route}`, { ...init, headers: { "api-key": Config.suroiApiKey, ...init?.headers } });
