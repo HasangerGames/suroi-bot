@@ -173,7 +173,7 @@ export default new Command({
             }
             case "info":
             case "delete": {
-                if (!(interaction.member?.permissions as Readonly<PermissionsBitField>).has(PermissionsBitField.Flags.BanMembers)) {
+                if (subcommand === "delete" && !(interaction.member?.permissions as Readonly<PermissionsBitField>).has(PermissionsBitField.Flags.BanMembers)) {
                     const embed = new EmbedBuilder()
                         .setTitle("❌ Insufficient permissions")
                         .setDescription("You must be a moderator to use this command.")
