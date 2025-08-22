@@ -1,5 +1,6 @@
 {
   "name": "suroi-bot",
+  "version": "4.0.0",
   "module": "src/index.ts",
   "type": "module",
   "scripts": {

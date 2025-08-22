@@ -47,6 +47,14 @@ export interface ConfigSchema {
    */
   starboardChannelId: string;
   /**
+   * The ID of the emoji to use for the starboard.
+   */
+  starboardEmojiId: string;
+  /**
+   * The name of the emoji to use for the starboard.
+   */
+  starboardEmojiName: string;
+  /**
    * The ID of the channel for the counting activity.
    */
   countingChannelId: string;

@@ -7,7 +7,7 @@ export default new EventHandler(Events.MessageReactionAdd, async reaction => {
     if (reaction.partial) await reaction.fetch();
     if (!reaction.count) return;
 
-    if (reaction.emoji.name !== "lobotomy" || reaction.count < 5) return;
+    if (reaction.emoji.id !== Config.starboardEmojiId || reaction.count < 5) return;
 
     const message = reaction.message as Message;
     if (message.partial) await message.fetch();
@@ -23,7 +23,7 @@ export default new EventHandler(Events.MessageReactionAdd, async reaction => {
             iconURL: author.displayAvatarURL(),
             name: author.username ?? ""
         })
-        .setDescription(`### <:lobotomy:1377040017377071215> \`${reaction.count}\`\n${message.content}\n―<@${author.id}>\n${createMessageLink(message)}`)
+        .setDescription(`### <:${Config.starboardEmojiName}:${Config.starboardEmojiId}> \`${reaction.count}\`\n${message.content}\n―<@${author.id}>\n${createMessageLink(message)}`)
         // biome-ignore lint/style/noNonNullAssertion: length check ensures existence of files[0]
         .setImage(files.length === 1 ? files[0]!.url : null)
         .setColor(0x00ff00)

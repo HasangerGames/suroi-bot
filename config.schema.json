@@ -41,6 +41,14 @@
             "description": "The ID of the channel to use for the starboard.",
             "type": "string"
         },
+        "starboardEmojiId": {
+            "description": "The ID of the emoji to use for the starboard.",
+            "type": "string"
+        },
+        "starboardEmojiName": {
+            "description": "The name of the emoji to use for the starboard.",
+            "type": "string"
+        },
         "countingChannelId": {
             "description": "The ID of the channel for the counting activity.",
             "type": "string"
@@ -73,6 +81,8 @@
         "moderationLogChannelId",
         "levelingChannelId",
         "starboardChannelId",
+        "starboardEmojiId",
+        "starboardEmojiName",
         "countingChannelId",
         "gameModLogChannelId",
         "gameModRoles"
