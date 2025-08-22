@@ -1,4 +1,4 @@
-import { AttachmentBuilder, ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
+import { AttachmentBuilder, ChatInputCommandInteraction, Colors, EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { readdir } from "node:fs/promises";
 import { pickRandomInArray } from "../../utils/misc";
 import { Command } from "../../utils/command";
@@ -40,7 +40,16 @@ export default new Command({
             }
             case "search": {
                 const query = interaction.options.getString("query", true);
-                name = pickRandomInArray(images.filter(name => name.toLowerCase().includes(query)));
+                const results = images.filter(name => name.toLowerCase().includes(query));
+                if (!results.length) {
+                    const embed = new EmbedBuilder()
+                        .setTitle("❌ No Results")
+                        .setDescription(`Couldn't find any results for \`${query}\`.`)
+                        .setColor(Colors.Red);
+                    await interaction.reply({ embeds: [embed], flags: [MessageFlags.Ephemeral] });
+                    return;
+                }
+                name = pickRandomInArray(results);
                 break;
             }
             case "upload": {
