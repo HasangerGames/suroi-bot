@@ -196,14 +196,15 @@ export default new Command({
             const socket = new WebSocket(`${region.gameAddress.replace("<gameID>", (gameData.gameID + region.offset).toString())}/play`);
             socket.binaryType = "arraybuffer";
 
-            const rejectTimeout = setTimeout(async() => {
-                socket.close();
-                status.status = ServerStatus.Offline;
-                status.statusText = "WebSocket timed out";
-                statusChanged = true;
-            }, 30000);
-
             await new Promise(resolve => {
+                const rejectTimeout = setTimeout(async() => {
+                    socket.close();
+                    status.status = ServerStatus.Offline;
+                    status.statusText = "WebSocket timed out";
+                    statusChanged = true;
+                    updateStatus().then(resolve);
+                }, 30000);
+
                 socket.onopen = () => {
                     const stream = new PacketStream(new ArrayBuffer(128));
 
