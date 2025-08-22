@@ -4,6 +4,7 @@ import { type AudioPlayerState, AudioPlayerStatus, createAudioPlayer, createAudi
 import { ActionRowBuilder, type APIEmbedField, ButtonBuilder, type ButtonInteraction, ButtonStyle, type ChatInputCommandInteraction, Colors, ComponentType, EmbedBuilder, GuildMember, type MessageActionRowComponentBuilder, MessageFlags, SlashCommandBuilder, type TextChannel, type VoiceBasedChannel } from "discord.js";
 import YouTube, { type Video } from "youtube-sr";
 import { Command } from "../../utils/command";
+import { Config } from "../../utils/config";
 import { standardNumberFormat } from "../../utils/misc";
 
 enum QueueStatus {
@@ -153,7 +154,7 @@ class SongManagerClass {
             this._status = QueueStatus.Downloading;
             await new Promise((resolve, reject) => {
                 this.currentDownload = Bun.spawn({
-                    cmd: ["yt-dlp", "--cookies", "data/cookies.txt", "-x", "--audio-format", "opus", "--audio-quality", "0", "-o", "data/songs/%(id)s", video.url],
+                    cmd: [Config.youtubeDownloaderPath, "--cookies", "data/cookies.txt", "-x", "--audio-format", "opus", "--audio-quality", "0", "-o", "data/songs/%(id)s", video.url],
                     stdout: "inherit",
                     stderr: "inherit",
                     onExit: (
