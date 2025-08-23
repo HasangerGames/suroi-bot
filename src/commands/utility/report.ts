@@ -214,10 +214,12 @@ export default new Command({
             if (reportData.banned) {
                 importantMessage = reportData.unbanned
                     ? "This report is marked as unbanned, meaning the player was previously punished, but the punishment was later removed."
-                    : "This report is marked as banned, but no associated punishment could be found. This can happen when a temporary ban expires.";
+                    : "This report is marked as banned, but no associated punishment could be found. This means the player was previously punished, but the punishment has expired.";
             }
 
-            const sameIPReports = allReports.filter(({ id, suspectIP }) => suspectIP === reportData.suspectIP && id !== reportId).sort();
+            const sameNameReports = allReports.filter(({ suspectName }) => suspectName === reportData.suspectName);
+            const sameIPReports = allReports.filter(({ id, suspectIP }) => suspectIP === reportData.suspectIP && id !== reportId).reverse();
+            const pastBannedReports = sameIPReports.filter(({ banned }) => banned);
 
             const embed = new EmbedBuilder()
                 .setDescription(`### 📃 Data for report ID \`${reportId}\``)
@@ -227,8 +229,9 @@ export default new Command({
                     { name: "Reporter Username", value: `\`${reportData.reporterName}\`` },
                     { name: "Region", value: regions[reportData.region?.toLowerCase() ?? ""]?.name ?? "Unknown" },
                     { name: "Time of Report", value: formatTimestamp(reportData.createdAt) },
-                    { name: "Same Name Reports", value: allReports.filter(({ suspectName }) => suspectName === reportData.suspectName).length.toString() },
-                    { name: "Same IP Reports", value: sameIPReports.length ? `${sameIPReports.length}\n${sameIPReports.slice(0, 5).map(report => `\`${report.id}\` at <t:${Math.floor(new Date(report.createdAt ?? "").getTime() / 1000)}:F>`).join("\n")}` : "0" }
+                    { name: "Same Name Reports", value: sameNameReports.length.toString(), inline: true },
+                    { name: "Same IP Reports", value: sameIPReports.length.toString(), inline: true },
+                    { name: "Past Banned Reports", value: pastBannedReports.length ? `${pastBannedReports.map(report => `\`${report.id}\` at <t:${Math.floor(new Date(report.createdAt ?? "").getTime() / 1000)}:F>`).join("\n")}` : "None found"}
                 )
                 .setColor(Colors.DarkBlue);
             await interaction.followUp({ embeds: [embed] });
